@@ -207,18 +207,52 @@ query-party-city(spuId) → query-party-store(code) → query-party-store-date
 
 ## 6. 盯单与主动通知
 
-```bash
-node scripts/mcd.mjs watch <orderId> --interval 60
-node scripts/mcd.mjs watch <orderId> --once --on-change "你的推送命令 {status} {orderId}"
+### 6.1 先说清楚：MCP **不会**推送
+
+麦当劳 MCP 没有任何回调/订阅机制，只能轮询 `query-order`。
+所以「配餐中 → 配送中 → 已送达 自动通知」**不是装上就有**，必须有人**定时去问**。
+
+本 skill 提供的那一半是：**轮询 + 判定变化 + 执行回调命令**。
+另一半（发到哪）必须你自己接。
+
+### 6.2 三层拼起来才叫"会通知"
+
+```
+计划任务/常驻进程  →  mcd watch --once  →  状态变了  →  你的通知命令  →  QQ/Telegram/邮件
 ```
 
-- 状态变化才触发，同样的状态不会重复叫你。
-- 占位符：`{status}` 中文状态、`{orderId}`、`{code}` 取餐码、`{amount}` 金额。
-- `--once` 会记住上次状态（缓存 24h），适合被 cron / 计划任务每几分钟调一次。
-- `--append log.txt` 顺手记一行流水。
+```bash
+# 手工盯一会儿（前台阻塞，适合立刻要看）
+node scripts/mcd.mjs watch <orderId> --interval 60
 
-MCP 本身**不支持推送**，只能轮询 `query-order`。要做到「配餐中 → 配送中 → 已送达」
-主动发消息，就是 watch + 你自己的通知通道。
+# 交给计划任务：每次只问一次，状态变了才触发回调
+node scripts/mcd.mjs watch --last --once --quiet --on-change "你的推送命令"
+```
+
+- `--last`：盯「刚刚下的那一单」（读本地下单缓存），不用每次传订单号；超过 `--max-age` 分钟（默认 180）就不盯了。
+- `--once`：查一次就退。上次状态会记进缓存（24h），**同一状态不重复通知**，所以可以安全地每 2 分钟跑一次。
+- 已经收尾（完成/取消/评价/退款）的单，下次直接短路，不会再去打接口。
+- `--on-change` 不给的话，用偏好里的 `notify`：
+
+```bash
+node scripts/mcd.mjs profile set notify "node 你的推送脚本"
+```
+
+- 占位符：`{status}` 中文状态、`{orderId}`、`{code}` 取餐码、`{amount}` 金额。
+- **同时**写成环境变量 `MCD_STATUS` / `MCD_ORDER_ID` / `MCD_CODE` / `MCD_AMOUNT`
+  —— Windows 走 shell 传中文参数会乱码，**读环境变量更稳**，推荐这条路。
+- `--append log.txt` 记流水。
+
+### 6.3 三种接线方式
+
+| 方式 | 适合 | 代价 |
+|---|---|---|
+| Windows 计划任务 / cron 每 2 分钟跑 `watch --last --once` | 自己电脑常开 | 零 token，最省 |
+| 聊天机器人常驻循环 | 有服务器/常驻进程 | 要一直活着 |
+| 云函数定时触发 | 有云账号 | 要暴露一个入口 |
+
+**注意**：AI 助手**不会自己常驻**。一次对话结束它就不动了，所以「让它盯着」这句话本身不构成推送 ——
+必须落到上面三种之一。
 
 ## 7. 硬性安全规则
 

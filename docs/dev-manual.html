@@ -443,25 +443,46 @@ node scripts/mcd.mjs cancel &lt;orderId&gt; --reason 3 --confirm</code></pre>
 </div>
 
 <h3>6.1 主动推送：配餐中 → 配送中 → 已送达</h3>
-<p>MCP <b>没有任何推送机制</b>，只能靠反复查 <code>query-order</code>。所以要「自动提醒」，
-就是轮询 + 一个回调命令：</p>
+<div class="box danger">
+  <span class="t">先说清楚：装上不等于会推送</span>
+  <p>MCP <b>没有任何回调或订阅机制</b>，只能靠反复查 <code>query-order</code>。
+  本工具提供的是「轮询 + 判定变化 + 执行回调」，<b>发到哪必须你自己接</b>。
+  没有接回调、也没有进程在跑的时候，不会有任何通知。</p>
+</div>
+<p>完整链路是三段，缺一段都不响：</p>
+<pre><code>计划任务/常驻进程  →  mcd watch --once  →  状态变了  →  你的通知命令  →  QQ/TG/邮件</code></pre>
 <pre><code># 前台盯：每 60 秒查一次，只有状态变了才打印
 node scripts/mcd.mjs watch &lt;orderId&gt; --interval 60
 
 # 交给计划任务 / cron：每次只查一次，状态变了才触发回调
-node scripts/mcd.mjs watch &lt;orderId&gt; --once --on-change "你的通知程序 {status}"</code></pre>
+node scripts/mcd.mjs watch --last --once --quiet --on-change "你的通知程序"</code></pre>
 <table>
-  <tr><th style="width:26%">占位符</th><th>替换成</th></tr>
-  <tr><td><code>{status}</code></td><td>中文状态，如「配餐中」「配送中」「已完成」</td></tr>
-  <tr><td><code>{orderId}</code></td><td>订单号</td></tr>
-  <tr><td><code>{code}</code></td><td>取餐码</td></tr>
-  <tr><td><code>{amount}</code></td><td>金额</td></tr>
+  <tr><th style="width:30%">参数 / 占位符</th><th>说明</th></tr>
+  <tr><td><code>--last</code></td><td>盯「刚刚下的那一单」（读本地下单缓存），计划任务不用传订单号</td></tr>
+  <tr><td><code>--max-age 180</code></td><td>最近一单超过 180 分钟就退出，不无限轮询死单</td></tr>
+  <tr><td><code>{status}</code> / <code>{orderId}</code> / <code>{code}</code> / <code>{amount}</code></td><td>回调命令里的占位符</td></tr>
+  <tr><td><code>profile set notify "…"</code></td><td>把回调存进偏好，<code>watch</code> 不带 <code>--on-change</code> 时自动用它</td></tr>
 </table>
+<div class="box warn">
+  <span class="t">回调里传中文：用环境变量，别用参数</span>
+  <p><code>runHook</code> 同时把值放进 <code>MCD_STATUS</code> / <code>MCD_ORDER_ID</code> /
+  <code>MCD_CODE</code> / <code>MCD_AMOUNT</code>。Windows 上经 shell 传中文参数会被转码搞坏，
+  <b>回调程序读 <code>process.env.MCD_STATUS</code> 最稳</b>。</p>
+</div>
 <div class="box tip">
   <span class="t">为什么可以「每 2 分钟跑一次」</span>
-  <p><code>--once</code> 会把上次的状态记进本地缓存（24 小时），
-  <b>同一个状态不会重复通知</b>。所以丢进计划任务里是安全的，不会刷屏。</p>
+  <p><code>--once</code> 会把上次状态记进本地缓存（24 小时），<b>同一状态不会重复通知</b>；
+  已经收尾（完成/取消）的单下次直接短路，连接口都不打。所以丢进计划任务里是安全的。</p>
 </div>
+<p><b>Windows 计划任务</b>（用 PowerShell 注册，别用 <code>schtasks</code> 命令行——引号会被吃掉）：</p>
+<pre><code>$action  = New-ScheduledTaskAction -Execute "wscript.exe" -Argument '"&lt;绝对路径&gt;\mcd-watch.vbs"'
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 2) -RepetitionDuration (New-TimeSpan -Days 3650)
+Register-ScheduledTask -TaskName "MCD Order Watch" -Action $action -Trigger $trigger -Force</code></pre>
+<p><code>mcd-watch.vbs</code>（<b>必须纯 ASCII</b>，wscript 按 ANSI/GBK 读）里只有一行：</p>
+<pre><code>Set sh = CreateObject("WScript.Shell")
+sh.Run "cmd /c node ""&lt;仓库&gt;\scripts\mcd.mjs"" watch --last --once --quiet", 0, False</code></pre>
+<p><b>Linux / macOS</b> 就一行 cron：</p>
+<pre><code>*/2 * * * * cd /path/to/mcd-skill &amp;&amp; node scripts/mcd.mjs watch --last --once --quiet &gt;&gt; watch.log 2&gt;&amp;1</code></pre>
 
 <!-- ============ 7 隐私 ============ -->
 <div class="pagebreak"></div>

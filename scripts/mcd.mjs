@@ -78,15 +78,32 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * 状态变化时跑一条外部命令，占位符：
  *   {status} 中文状态  {orderId} 订单号  {code} 取餐码  {amount} 金额
  * 例：--on-change "notify.exe {status} {orderId}"
+ *
+ * 同时把同样的值放进环境变量 MCD_STATUS / MCD_ORDER_ID / MCD_CODE / MCD_AMOUNT。
+ * 走 shell 传中文参数在 Windows 上可能乱码，用环境变量更稳。
  */
 function runHook(template, { status, orderId, order }) {
+  const code = order?.pickupCode || '';
+  const amount = order?.realTotalAmount || '';
   const cmd = String(template)
     .replace(/\{status\}/g, status)
     .replace(/\{orderId\}/g, orderId)
-    .replace(/\{code\}/g, order?.pickupCode || '')
-    .replace(/\{amount\}/g, order?.realTotalAmount || '');
+    .replace(/\{code\}/g, code)
+    .replace(/\{amount\}/g, amount);
   try {
-    const child = spawn(cmd, { shell: true, stdio: 'ignore', detached: true, windowsHide: true });
+    const child = spawn(cmd, {
+      shell: true,
+      stdio: 'ignore',
+      detached: true,
+      windowsHide: true,
+      env: {
+        ...process.env,
+        MCD_STATUS: status,
+        MCD_ORDER_ID: orderId,
+        MCD_CODE: code,
+        MCD_AMOUNT: amount,
+      },
+    });
     child.unref();
   } catch (e) {
     out(`  （回调命令没跑起来：${e.message}）`);
@@ -1232,11 +1249,30 @@ async function main() {
     /* ── 订单跟踪（可拿来推送） ── */
     case 'watch':
     case 'track-order': {
-      const orderId = String(rest[0] || flags.order || '');
-      if (!orderId) return die('用法：node scripts/mcd.mjs watch <orderId> [--interval 60] [--times 90] [--on-change "命令"]');
+      let orderId = String(rest[0] || flags.order || '');
+
+      // --last：盯"刚刚下的那一单"。给计划任务/cron 用，不用每次传订单号
+      if (!orderId && flags.last) {
+        const lastOrder = cacheGet('last-order', 24 * 60 * 60 * 1000);
+        if (!lastOrder?.orderId) {
+          if (!flags.quiet) out('还没有下过单，没什么可盯的。');
+          return;
+        }
+        const ageMin = (Date.now() - Number(lastOrder.at || 0)) / 60000;
+        const maxAge = Number(flags['max-age'] || 180);
+        if (ageMin > maxAge) {
+          if (!flags.quiet) out(`最近一单是 ${Math.round(ageMin)} 分钟前的，超过 ${maxAge} 分钟不盯了。`);
+          return;
+        }
+        orderId = String(lastOrder.orderId);
+      }
+      if (!orderId) return die('用法：node scripts/mcd.mjs watch <orderId> | watch --last [--once] [--on-change "命令"]');
+
       const interval = Math.max(15, Number(flags.interval || 60));
       const maxTimes = Math.max(1, Number(flags.times || (flags.once ? 1 : 120)));
-      const hook = typeof flags['on-change'] === 'string' ? flags['on-change'] : null;
+      // --on-change 优先；没给就用偏好里的 notify，便于计划任务写成一行
+      const hook =
+        typeof flags['on-change'] === 'string' ? flags['on-change'] : String(getProfile().notify || '').trim() || null;
       const hookInit = typeof flags['on-start'] === 'string' ? flags['on-start'] : null;
       const appendTo = typeof flags.append === 'string' ? resolve(flags.append) : null;
       const TERMINAL = /完成|取消|评价|退款/;
@@ -1246,7 +1282,14 @@ async function main() {
       const stateKey = `watch:${orderId}`;
       // 被计划任务反复调用时（--once），靠这个记住上次状态，只在"变化"时通知
       const remembered = cacheGet(stateKey, 24 * 60 * 60 * 1000);
-      if (flags.once && remembered && flags['no-remember'] !== true) last = remembered;
+      if (flags.once && remembered && flags['no-remember'] !== true) {
+        // 已经收尾的单，不必再去打接口
+        if (TERMINAL.test(String(remembered))) {
+          if (!flags.quiet) out(`  这一单已经结束（${remembered}），不再盯。`);
+          return;
+        }
+        last = remembered;
+      }
 
       for (let i = 0; i < maxTimes; i++) {
         let d;

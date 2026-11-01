@@ -250,3 +250,58 @@ node scripts/mcd.mjs watch <orderId> --once --on-change "your-notify.exe {status
 想做到「支付后 → 配餐中 → 配送中 → 已送达」每条都推，最省事的组合是：
 **计划任务每 2 分钟跑一次 `watch --once --on-change`**，回调里发你自己的消息通道。
 
+### 14.1 `--last`：让计划任务只写一行
+
+```bash
+node scripts/mcd.mjs watch --last --once --quiet --append watch.log
+```
+
+- `--last` 从本地下单缓存（`order` 成功时写入的 `last-order`）里取订单号，
+  计划任务不用每次改写参数。
+- `--max-age 180`（默认）：最近一单超过 180 分钟就直接退出，不会无限轮询死单。
+- 已经进终态（完成/取消/评价/退款）的单，watch 状态缓存里会记着，
+  下次调用**直接短路**，连接口都不打。
+
+### 14.2 回调里的中文：用环境变量，别用参数
+
+`runHook` 除了替换占位符，还会把同样的值放进环境变量：
+
+| 环境变量 | 值 |
+|---|---|
+| `MCD_STATUS` | 中文状态 |
+| `MCD_ORDER_ID` | 订单号 |
+| `MCD_CODE` | 取餐码 |
+| `MCD_AMOUNT` | 金额 |
+
+原因：Windows 上 `spawn(..., {shell:true})` 传中文参数会被 codepage 转坏。
+回调程序读 `process.env.MCD_STATUS` 最稳。
+
+### 14.3 Windows 计划任务（实测可用的写法）
+
+```
+wscript.exe "mcd-watch.vbs"
+```
+
+`mcd-watch.vbs`（**必须纯 ASCII**，wscript 按 ANSI/GBK 读）里：
+
+```vbs
+Set sh = CreateObject("WScript.Shell")
+sh.Run "cmd /c node ""<仓库>\scripts\mcd.mjs"" watch --last --once --quiet --append ""<日志>""", 0, False
+```
+
+注册任务时用 PowerShell 而不是 `schtasks` 命令行 —— 后者会被 PowerShell 的参数解析吃掉引号：
+
+```powershell
+$action  = New-ScheduledTaskAction -Execute "wscript.exe" -Argument '"<绝对路径>\mcd-watch.vbs"'
+$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date) -RepetitionInterval (New-TimeSpan -Minutes 2) -RepetitionDuration (New-TimeSpan -Days 3650)
+Register-ScheduledTask -TaskName "MCD Order Watch" -Action $action -Trigger $trigger -Force
+```
+
+Linux/macOS 就一行 cron：
+
+```
+*/2 * * * * cd /path/to/mcd-skill && node scripts/mcd.mjs watch --last --once --quiet >> watch.log 2>&1
+```
+
+回调命令写在 `profile set notify "…"`，watch 会自动取用。
+
