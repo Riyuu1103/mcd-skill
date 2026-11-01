@@ -1364,7 +1364,16 @@ async function main() {
       out(`   查进度：node scripts/mcd.mjs order-status ${d.orderId || '<订单号>'}`);
       if (d.orderId) {
         cacheSet('last-order', { orderId: String(d.orderId), at: Date.now(), amount: d.realTotalAmount || '' });
-        out(`   盯着它：node scripts/mcd.mjs watch ${d.orderId}`);
+        const notify = String(getProfile().notify || '').trim();
+        out('');
+        if (notify) {
+          out('   盯着它（状态一变就通知你）：');
+          out(`   node scripts/mcd.mjs watch ${d.orderId} --interval 60 --on-change ${JSON.stringify(notify)}`);
+        } else {
+          out(`   盯着它：node scripts/mcd.mjs watch ${d.orderId}`);
+          out('   想自动收到「配餐中 / 配送中 / 已送达」：先设通知命令');
+          out('     node scripts/mcd.mjs profile set notify "你的推送命令 {status} {orderId}"');
+        }
       }
       return;
     }

@@ -99,8 +99,15 @@ node scripts/mcd.mjs status         # 连接自检
 node scripts/mcd.mjs now            # 服务器时间
 
 node scripts/mcd.mjs stores --city 上海 --keyword 中山北路3663号
-node scripts/mcd.mjs menu --grep 巨无霸
+node scripts/mcd.mjs menu                    # 摘要：分类 + 前几样
+node scripts/mcd.mjs menu --grep 巨无霸       # 搜商品
+node scripts/mcd.mjs menu --cat 套餐          # 只看一类
+node scripts/mcd.mjs menu --all              # 全量（99 项，终端里看）
+
+node scripts/mcd.mjs detail "巨无霸四件套"    # 套餐组成 + 能换成什么 + 差价
 node scripts/mcd.mjs price --item "巨无霸:1" --item "中薯条:1"
+node scripts/mcd.mjs price --item "巨无霸:1" --detail   # 顺带列出套餐可换项
+node scripts/mcd.mjs price --item "巨无霸:1" --brief    # 三行简版，可直接转发
 node scripts/mcd.mjs price --mode delivery --item "巨无霸:1"
 node scripts/mcd.mjs price --item "巨无霸:1" --at "2026-11-02 18:00"
 node scripts/mcd.mjs order --item "巨无霸:1" --confirm
@@ -108,6 +115,8 @@ node scripts/mcd.mjs order --item "巨无霸:1" --confirm
 node scripts/mcd.mjs history 5
 node scripts/mcd.mjs reorder [--confirm]
 node scripts/mcd.mjs order-status <orderId>
+node scripts/mcd.mjs watch <orderId> --interval 60        # 盯状态
+node scripts/mcd.mjs watch <orderId> --once --on-change "通知程序 {status}"
 node scripts/mcd.mjs cancel <orderId> --reason 3 --confirm
 
 node scripts/mcd.mjs coupons        # 卡包里的券
@@ -130,7 +139,9 @@ $ node scripts/mcd.mjs price --item "巨无霸:1" --item "薯条:1"
   中薯条                    ×1    ¥13.50
 
   商品金额  ¥39.00
-  实付      ¥39.00
+  ────────────────────────────
+  ▶ 实付    ¥39.00
+  ────────────────────────────
 
   取餐方式：eat-in(堂食)  take-in-store(外带)
 ```

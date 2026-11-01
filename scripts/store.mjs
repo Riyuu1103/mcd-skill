@@ -68,6 +68,7 @@ export const DEFAULT_PROFILE = {
   },
   budget: null, // 单餐预算（元），只用来提示，不拦截
   autoCoupon: true, // 算价时自动挑最省的券
+  notify: '', // 可选：状态变化的通知命令，支持 {status} {orderId} {code} {amount}
 };
 
 export const MODES = {
