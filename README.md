@@ -124,6 +124,8 @@ node scripts/mcd.mjs watch <orderId> --once --on-change "通知程序 {status}"
 node scripts/mcd.mjs cancel <orderId> --reason 3 --confirm
 
 node scripts/mcd.mjs coupons        # 卡包里的券
+node scripts/mcd.mjs claimable      # 麦麦省里可领的券（算价时会自动提醒）
+node scripts/mcd.mjs claim --confirm  # 一键全领
 node scripts/mcd.mjs store-coupons  # 当前门店可用券
 node scripts/mcd.mjs points         # 积分 + 本月将过期
 

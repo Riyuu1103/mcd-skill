@@ -68,7 +68,11 @@ node scripts/mcd.mjs watch <orderId>            # 盯状态，变化时可跑外
 node scripts/mcd.mjs cancel <orderId> --reason 3 --confirm
 
 # 券与积分
-node scripts/mcd.mjs coupons / store-coupons / points
+node scripts/mcd.mjs coupons        # 卡包里的券
+node scripts/mcd.mjs claimable      # 麦麦省「可领」的券（会自动提醒）
+node scripts/mcd.mjs claim --confirm  # 一键全领（不可逆）
+node scripts/mcd.mjs store-coupons  # 当前门店这一单能用的券
+node scripts/mcd.mjs points         # 积分 + 本月将过期
 
 # 兜底
 node scripts/mcd.mjs call <工具名> k=v k=v ...
@@ -166,10 +170,21 @@ delivery-query-addresses → delivery-query-stores(addressId,beType=2)
 → 确认 → create-order（addressId + remark）
 ```
 
-### 5.3 券
+### 5.3 券（三件事别混）
 
-`query-my-coupons`（卡包里有什么）≠ `query-store-coupons`（这张单这家店能不能用）。
-`auto-bind-coupons` 会一次性领光所有能领的券，**不可逆，先问**。
+| 问题 | 用哪个 |
+|---|---|
+| 我卡包里有什么 | `query-my-coupons` / `coupons` |
+| 麦麦省里还有哪些**能领** | `available-coupons` / `claimable` |
+| 这张单、这家店**能不能用** | `query-store-coupons` / `store-coupons` |
+
+**自动提醒**：`price` / `order` 每次都会顺手查一次「可领券」，有就提示一句
+「还有 N 张券可以领」。`home` 也会列出来。缓存 5 分钟，不会反复打接口。
+
+**领券是不可逆动作**：`claim` 不带 `--confirm` 会被拦下。领之前把券名念给用户听。
+领完再 `price` 一次，价格可能更好。
+
+`auto-bind-coupons` 是「一次性领光所有能领的券」，没有挑选余地。
 
 ### 5.4 积分商城
 

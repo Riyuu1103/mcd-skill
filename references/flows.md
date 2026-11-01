@@ -125,6 +125,23 @@ CLI 已经把这个做进命令里：`mcd detail "套餐名"`、`mcd price --ite
 - 券不生效的常见原因：门店不参与、商品不在范围、没到金额门槛、已过期、限用张数。
 - `calculate-price` 返回 `discount`（分）就是优惠掉的金额。
 
+### 6.1 自动识别可领券（CLI 已内建）
+
+`available-coupons` 的返回**不稳定**：有时是 JSON 数组，有时直接给一段 Markdown 文案
+（`- 优惠券标题：免费脆薯饼 \` / `状态：可领取 \`）。只写一种解析会漏。
+
+CLI 的 `parseCouponList()` 两种都认，然后：
+
+| 命令 | 作用 |
+|---|---|
+| `claimable` | 列出可领券 + 状态；有缓存（5 分钟） |
+| `claim --confirm` | 一键全领；不带 `--confirm` 会被 `guardWrite` 拦下 |
+| `price` / `order` | 每次顺手提醒「还有 N 张券可以领」，可用 `--no-claim-hint` 关掉 |
+| `home` | 概览里直接列出来 |
+
+实现要点：`claimHint()` 只在 `autoCoupon` 开着时提示（关掉自动用券的人不需要）；
+失败静默（领券接口挂了不该阻塞算价）。
+
 ## 7. 积分与麦麦商城
 
 ```bash

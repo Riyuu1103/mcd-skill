@@ -273,6 +273,8 @@ function currentMode() {
 }
 
 /** 取当前要用的门店；没有就报清楚下一步做什么 */
+let _warnedStoreMode = false;
+
 function currentStore(mode) {
   const p = getProfile();
   let store = p.store;
@@ -296,8 +298,26 @@ function currentStore(mode) {
         `重新用 --mode ${mode.key} 跑一次 stores，再 profile use-store。`,
     );
   }
+
+  // 默认门店是按某种取餐方式选的；换成另一种多半不通用（麦乐送/得来速要配送门店）
+  const stored = store.beType != null ? Number(store.beType) : null;
+  if (stored != null && stored !== mode.beType) {
+    const storedLabel = Object.values(MODES).find((m) => m.beType === stored)?.label || `beType=${stored}`;
+    if (mode.orderType === 2) {
+      throw new Error(
+        `当前默认门店是按「${storedLabel}」选的，${mode.label}要用能配送的门店。\n` +
+          `  node scripts/mcd.mjs stores --mode ${mode.key}\n` +
+          '  node scripts/mcd.mjs profile use-store 1',
+      );
+    }
+    if (!_warnedStoreMode && !flags.brief && !flags.json) {
+      _warnedStoreMode = true;
+      out(`  ⚠️ 默认门店是按「${storedLabel}」选的，现在是「${mode.label}」。可能不通用，失败就重新 stores + use-store。`);
+    }
+  }
   return store;
 }
+
 
 /* ─────────────────────────── 菜单索引 ─────────────────────────── */
 
@@ -396,7 +416,7 @@ function itemSpecs() {
 
 /* ─────────────────────────── 算价 ─────────────────────────── */
 
-function priceArgsOf(store, mode, items, { reservationDate, takeWay } = {}) {
+function priceArgsOf(store, mode, items, { reservationDate, takeWay, forOrder = false } = {}) {
   const args = { storeCode: store.storeCode, orderType: mode.orderType, beType: mode.beType, items };
   if (mode.beType !== 1 && store.beCode) args.beCode = store.beCode;
   const at = reservationDate || flags.at;
@@ -404,6 +424,21 @@ function priceArgsOf(store, mode, items, { reservationDate, takeWay } = {}) {
   if (takeWay) args.takeWayCode = takeWay;
   const taste = getProfile().taste || {};
   args.needTableware = Boolean(taste.tableware);
+
+  // 外送下单必须带 addressId（calculate-price 不吃这个参数，只有 create-order 要）
+  if (forOrder && mode.orderType === 2) {
+    const addr = getProfile().address;
+    if (!addr?.addressId) {
+      throw new Error(
+        '麦乐送下单要先选收货地址：\n' +
+          '  node scripts/mcd.mjs address         # 看列表\n' +
+          '  node scripts/mcd.mjs address use 3   # 选一个\n' +
+          '  node scripts/mcd.mjs address new …   # 或者新建',
+      );
+    }
+    args.addressId = String(addr.addressId);
+    delete args.takeWayCode;
+  }
   return args;
 }
 
@@ -474,12 +509,16 @@ async function quote(store, mode, specs, { autoCoupon = false, menuForce = false
 
   let used = clean;
   let base = null;
+  let p = null;
   if (autoCoupon) {
+    // 先算「不用券」的价，再让自动选券去试；试出更好的就直接用，避免重复请求
+    base = parsePrice(await runTool('calculate-price', priceArgsOf(store, mode, clean)));
     const plan = await bestCouponPlan(store, mode, clean);
     used = plan.items;
-    base = parsePrice(await runTool('calculate-price', priceArgsOf(store, mode, clean)));
+    p = plan.best || base;
+  } else {
+    p = parsePrice(await runTool('calculate-price', priceArgsOf(store, mode, used)));
   }
-  const p = parsePrice(await runTool('calculate-price', priceArgsOf(store, mode, used)));
 
   // 菜单上写的价 vs 实际算出来的价，对不上要当面说
   const diffs = [];
@@ -604,12 +643,14 @@ function renderMenu(menu, grep, opts = {}) {
     matchedCats++;
 
     // 默认只给摘要：分类 + 条数 + 前几样，避免一次糊 99 行出去
+    // --grep / --cat / --all 时要全给，否则"搜出来只有 8 条"很容易误以为没有
     const showAll = all || Boolean(grep) || Boolean(catFilter);
     const cap = showAll ? codes.length : Math.min(3, codes.length);
+    const rows = showAll ? cap : Math.min(cap, limit);
 
     lines.push('');
     lines.push(`  ── ${catName}（${codes.length} 项）──`);
-    for (let i = 0; i < Math.min(cap, limit); i++) {
+    for (let i = 0; i < rows; i++) {
       const it = menu.items[codes[i]];
       if (!it) continue;
       shown++;
@@ -618,8 +659,8 @@ function renderMenu(menu, grep, opts = {}) {
       const addon = it.canWithOrder === true ? '  [可随单购]' : '';
       lines.push(`    ${pad(codes[i], 12)}${pad(it.name, 30)}${pad(price, 10)}${orig}${addon}`);
     }
-    if (codes.length > cap) {
-      lines.push(`    … 还有 ${codes.length - cap} 项，只看这类：--cat "${catName}"`);
+    if (codes.length > rows) {
+      lines.push(`    … 还有 ${codes.length - rows} 项，只看这类：--cat "${catName}"`);
     }
   }
 
@@ -745,6 +786,79 @@ function briefPrice(item, p, mode, store) {
   return lines.join('\n');
 }
 
+/* ─────────────────────────── 可领券 ─────────────────────────── */
+
+/**
+ * available-coupons 有时返回 JSON 数组，有时直接返回 Markdown 文案，
+ * 两种都得认，不能只写一种。
+ */
+function parseCouponList(data) {
+  if (Array.isArray(data)) {
+    return data
+      .map((c) => ({
+        name: c.couponName || c.name || '',
+        status: c.couponStatus || c.status || '',
+        label: c.label || '',
+        raw: c,
+      }))
+      .filter((x) => x.name);
+  }
+  if (data && typeof data === 'object' && Array.isArray(data.coupons)) {
+    return parseCouponList(data.coupons);
+  }
+  if (typeof data !== 'string') return [];
+
+  // Markdown 形态：
+  //   - 优惠券标题：免费脆薯饼 \
+  //     状态：可领取 \
+  const list = [];
+  let cur = null;
+  for (const line of data.split(/\r?\n/)) {
+    const t = line.match(/优惠券标题[:：]\s*(.+?)(?:\s*\\\s*)?$/);
+    if (t) {
+      if (cur) list.push(cur);
+      cur = { name: t[1].trim(), status: '', label: '', raw: null };
+      continue;
+    }
+    const s = line.match(/状态[:：]\s*(.+?)(?:\s*\\\s*)?$/);
+    if (s && cur) cur.status = s[1].trim();
+  }
+  if (cur) list.push(cur);
+  return list.filter((x) => x.name);
+}
+
+const isClaimable = (c) => /可领取|CAN_GET|未领取/.test(String(c.status || c.label || ''));
+
+/** 取了就缓存 5 分钟，别每次算价都去打一次接口 */
+async function fetchClaimable({ force = false } = {}) {
+  if (!force) {
+    const cached = cacheGet('claimable', 5 * 60 * 1000);
+    if (cached) return cached;
+  }
+  const payload = await runTool('available-coupons', {});
+  const list = parseCouponList(payload.data);
+  cacheSet('claimable', list);
+  return list;
+}
+
+/** 算价/下单时顺手提醒一句「还有券能领」 */
+async function claimHint() {
+  if (flags['no-claim-hint'] === true) return;
+  if (!wantAutoCoupon()) return;
+  let list;
+  try {
+    list = await fetchClaimable();
+  } catch {
+    return;
+  }
+  const can = list.filter(isClaimable);
+  if (!can.length) return;
+  const names = can.slice(0, 3).map((c) => c.name).join(' / ');
+  out('');
+  out(`  💡 还有 ${can.length} 张券可以领：${names}${can.length > 3 ? ' 等' : ''}`);
+  out('     领了再算一次可能更省：node scripts/mcd.mjs claim --confirm');
+}
+
 /* ─────────────────────────── 收货地址 ─────────────────────────── */
 
 /** 取收货地址列表：优先缓存，可强制刷新 */
@@ -814,6 +928,8 @@ mcd — 麦当劳中国 MCP 命令行客户端
 
   券与积分
     node scripts/mcd.mjs coupons                    我卡包里的券
+    node scripts/mcd.mjs claimable                  麦麦省里可领的券      ← 自动提醒
+    node scripts/mcd.mjs claim --confirm            一键全领
     node scripts/mcd.mjs store-coupons              当前门店可用券
     node scripts/mcd.mjs points                     积分（含本月将过期）
 
@@ -912,21 +1028,14 @@ async function main() {
         }
       }
       if (avail?.data) {
-        // 这个工具有时返回 JSON 数组，有时直接返回 Markdown 文案，两种都要认
-        if (typeof avail.data === 'string') {
-          const n = (avail.data.match(/可领取/g) || []).length;
-          if (n) {
-            out('');
-            out(`可领的券  : ${n} 张（麦麦省）→ node scripts/mcd.mjs call auto-bind-coupons --confirm`);
-          }
-        } else {
-          const arr = Array.isArray(avail.data) ? avail.data : [];
-          const can = arr.filter((c) => (c.couponStatus || 'CAN_GET') === 'CAN_GET');
-          if (can.length) {
-            out('');
-            out(`可领的券  : ${can.length} 张 → node scripts/mcd.mjs call auto-bind-coupons --confirm`);
-            for (const c of can.slice(0, 5)) out(`            · ${c.couponName}`);
-          }
+        const list = parseCouponList(avail.data);
+        const can = list.filter(isClaimable);
+        if (can.length) {
+          cacheSet('claimable', list);
+          out('');
+          out(`可领的券  : ${can.length} 张（麦麦省）`);
+          for (const c of can.slice(0, 5)) out(`            · ${c.name}`);
+          out('            领：node scripts/mcd.mjs claim --confirm');
         }
       }
       if (mine?.data) {
@@ -1309,6 +1418,7 @@ async function main() {
       }
       printMenuDiff(q);
       if (flags.detail) await printComboHints(store, mode, q, { all: Boolean(flags.all) });
+      await claimHint();
       printBudget(q.p);
       return;
     }
@@ -1339,9 +1449,10 @@ async function main() {
       printMenuDiff(q);
       // 下单前一定会把套餐的可换项摆出来，避免"买完了才知道还能换"
       if (flags['no-detail'] !== true) await printComboHints(store, mode, q, { all: Boolean(flags.all) });
+      await claimHint();
       printBudget(p);
 
-      const orderArgs = priceArgsOf(store, mode, items, { takeWay });
+      const orderArgs = priceArgsOf(store, mode, items, { takeWay, forOrder: true });
       delete orderArgs.items;
       orderArgs.items = items;
       withRemark(orderArgs, mode);
@@ -1431,7 +1542,7 @@ async function main() {
         return;
       }
       const takeWay = (p.takeWayList.find((t) => t.code === 'take-in-store') || p.takeWayList[0])?.code;
-      const orderArgs = { ...priceArgsOf(store, mode, items, { takeWay }), items };
+      const orderArgs = { ...priceArgsOf(store, mode, items, { takeWay, forOrder: true }), items };
       if (mode.orderType === 2) delete orderArgs.takeWayCode;
       withRemark(orderArgs, mode);
       guardWrite('create-order', orderArgs);
@@ -1448,9 +1559,43 @@ async function main() {
       const payload = await runTool('query-my-coupons', {});
       const arr = payload.data?.coupons || (Array.isArray(payload.data) ? payload.data : []);
       if (flags.json) return out(JSON.stringify(arr, null, 2));
-      if (!arr.length) return out('卡包里没有券。');
+      if (!arr.length) return out('卡包里没有券。看看有没有可领的：node scripts/mcd.mjs claimable');
       for (const c of arr) out(`${c.couponName || c.name || ''}  ${c.couponId || ''}`);
       out(`\n共 ${arr.length} 张`);
+      return;
+    }
+
+    /* ── 可领券（麦麦省） ── */
+    case 'claimable':
+    case 'available': {
+      const list = await fetchClaimable({ force: rest[0] === 'refresh' || Boolean(flags['no-cache']) });
+      if (flags.json) return out(JSON.stringify(list, null, 2));
+      if (!list.length) return out('现在没有可领的券。');
+      const can = list.filter(isClaimable);
+      list.forEach((c, i) => out(`${String(i + 1).padStart(2)}. ${c.name}　${c.status || ''}`));
+      out('');
+      if (!can.length) return out(`共 ${list.length} 张，但都已经领过了。`);
+      out(`共 ${list.length} 张，其中 ${can.length} 张可领。`);
+      out('一键全领：node scripts/mcd.mjs claim --confirm');
+      return;
+    }
+
+    /* ── 一键领券 ── */
+    case 'claim': {
+      const list = await fetchClaimable();
+      const can = list.filter(isClaimable);
+      if (!can.length) return out('现在没有可领的券。');
+      out(`准备领取 ${can.length} 张：`);
+      for (const c of can) out(`  · ${c.name}`);
+      guardWrite('auto-bind-coupons', {});
+      const payload = await runTool('auto-bind-coupons', {});
+      cacheSet('claimable', []);
+      out('');
+      out('✅ 已提交领取。');
+      const d = payload.data;
+      if (d && typeof d === 'object') out(JSON.stringify(d, null, 2));
+      out('');
+      out('核实一下卡包：node scripts/mcd.mjs coupons');
       return;
     }
 

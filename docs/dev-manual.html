@@ -405,17 +405,30 @@ node scripts/mcd.mjs reorder --confirm</code></pre>
 <h2><span class="n">5</span>券、积分、省钱</h2>
 <pre><code>node scripts/mcd.mjs home            # 积分 + 本月将过期 + 可领券 + 上一单
 node scripts/mcd.mjs coupons         # 卡包里的券
+node scripts/mcd.mjs claimable       # 麦麦省里「可领」的券
+node scripts/mcd.mjs claim --confirm # 一键全领
 node scripts/mcd.mjs store-coupons   # 当前门店这张单能用的券
 node scripts/mcd.mjs points          # 积分明细</code></pre>
 <table>
   <tr><th style="width:34%">命令 / 工具</th><th>含义</th></tr>
   <tr><td><code>query-my-coupons</code></td><td>卡包里有什么券</td></tr>
   <tr><td><code>query-store-coupons</code></td><td><b>这张单、这家店</b>到底哪张能用（两者不能互相替代）</td></tr>
-  <tr><td><code>available-coupons</code></td><td>麦麦省里<b>可领</b>的券</td></tr>
-  <tr><td><code>auto-bind-coupons</code></td><td>一键领光所有能领的券（<b>不可逆，要 <code>--confirm</code></b>）</td></tr>
+  <tr><td><code>available-coupons</code> / <code>claimable</code></td><td>麦麦省里<b>可领</b>的券</td></tr>
+  <tr><td><code>auto-bind-coupons</code> / <code>claim</code></td><td>一键领光所有能领的券（<b>不可逆，要 <code>--confirm</code></b>）</td></tr>
 </table>
 <p><code>price</code> 默认会<b>自动挑最省的券</b>：把每张券在每件商品上试一遍，取实付最低的组合。
 不想要就加 <code>--no-auto-coupon</code>。</p>
+
+<h3>5.1 可领券的自动提醒</h3>
+<p><code>price</code> / <code>order</code> 每次都会顺手查一次可领券，有就在末尾提一句：</p>
+<pre><code>💡 还有 3 张券可以领：免费脆薯饼 / 13.5元中薯条买一送一 / 19.9元王牌小食任选2
+   领了再算一次可能更省：node scripts/mcd.mjs claim --confirm</code></pre>
+<ul>
+  <li>结果缓存 5 分钟，不会每个命令都去打接口；</li>
+  <li><code>--no-claim-hint</code> 可以关掉；<code>autoCoupon</code> 关着时也不提示；</li>
+  <li><code>available-coupons</code> 有时返回 JSON、有时返回 Markdown，解析器两种都认；</li>
+  <li>查不到就静默跳过 —— 领券提示失败不该阻塞算价。</li>
+</ul>
 
 <!-- ============ 6 查单 ============ -->
 <h2><span class="n">6</span>查单与取消</h2>
