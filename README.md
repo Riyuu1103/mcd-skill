@@ -15,8 +15,12 @@ node scripts/mcd.mjs home
 
 ## 这是什么
 
-📘 **图文版完整指南：[`docs/麦当劳MCP-接入与使用指南.pdf`](docs/麦当劳MCP-接入与使用指南.pdf)** ——
-从拿 Token 到付款、到隐私说明，读完不用再看别的东西。
+📘 **两份文档，按你的身份选一份：**
+
+| 文档 | 给谁 | 内容 |
+|---|---|---|
+| [麦当劳AI点餐-使用指南.pdf](docs/麦当劳AI点餐-使用指南.pdf) | **普通用户** | 只会跟 AI 说话就能用：怎么接入、怎么开口点单、怎么付款、隐私。6 页，没有一行命令行 |
+| [麦当劳MCP-开发者手册.pdf](docs/麦当劳MCP-开发者手册.pdf) | 动手的人 | 命令行全部参数、配置项、36 个工具、自动化盯单、排错。15 页 |
 
 | | |
 |---|---|
@@ -197,22 +201,28 @@ Cursor rules 都能直接吃。核心三件事：
 | DeepSeek Harness (DSH) | `%USERPROFILE%\.dsh\profiles\<profile>\cordis.patch.yml` 加一条 `insert:` |
 | OpenClaw | `openclaw mcp add`，或 `openclaw.json` 的 `mcp.servers` |
 
-## 和 QQ / 聊天机器人联动
+## 接聊天机器人（可选）
 
-`references/viola.md` 是一个完整例子：让 OpenClaw 的 agent「薇欧拉」
-在 QQ 里帮忙点餐 —— 她只负责查、算、下单，把**支付链接**发回来，人自己扫码。
-同样的套路可以套到任何有 shell 权限的机器人上。
+`references/bot-integration.md` 讲怎么把点餐挂到 QQ / Telegram / 微信机器人上：
+机器人只负责查、算、下单，把**支付链接**发回来，人自己扫码付。
+任何有 shell 权限的机器人都适用。
+
+> 不接机器人也完全能用 —— 用户直接跟 AI 说话就行，见《使用指南》。
 
 ## 目录
 
 ```
+docs/
+  麦当劳AI点餐-使用指南.pdf     ← 给普通用户（6 页，不含命令行）
+  麦当劳MCP-开发者手册.pdf      ← 给动手的人（15 页）
+  user-guide.html / dev-manual.html   两份 PDF 的源文件
 SKILL.md                 给 AI 的技能说明（先读这个）
 scripts/mcp-client.mjs   MCP Streamable HTTP 客户端（可单独复用）
 scripts/mcd.mjs          CLI
 scripts/store.mjs        本地偏好与缓存
 references/tools.md      36 个工具的真实入参 Schema（自动生成，别手改）
 references/flows.md      点餐编排、金额单位、常见的坑
-references/viola.md      QQ / OpenClaw 机器人联动范例
+references/bot-integration.md  聊天机器人接入（可选）
 ```
 
 ## 安全

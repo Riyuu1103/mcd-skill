@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<title>麦当劳 MCP Skill · 接入与使用指南</title>
+<title>麦当劳 MCP · 开发者手册</title>
 <style>
   @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
 
@@ -100,16 +100,16 @@
 
 <div class="cover">
   <div class="eyebrow">麦当劳中国 MCP · 第三方客户端</div>
-  <h1>接入与使用指南</h1>
-  <div class="sub">零依赖 Node 客户端 · 36 个官方工具 · 一条命令点一单</div>
+  <h1>开发者手册</h1>
+  <div class="sub">命令行参数 · 配置项 · 自动化集成 · 二次开发</div>
   <div class="meta">
     文档版本 1.0　|　适配 MCP 服务 1.0.9（2026-09-10）　|　2026-11-01
   </div>
 </div>
 
 <!-- ============ 一页速览 ============ -->
-<h2><span class="n">0</span>先看这一页</h2>
-<p class="kicker">如果只读一页，读这页。下面是全部要点，其余章节都是展开说明。</p>
+<h2><span class="n">0</span>快速开始</h2>
+<p class="kicker">三条命令跑通。普通用户请看《使用指南》，本文是给动手的人看的。</p>
 
 <div class="quick">
   <div class="card">
@@ -388,11 +388,11 @@ node scripts/mcd.mjs reorder --confirm</code></pre>
   <tr><th style="width:26%">谁在操作</th><th>形式</th></tr>
   <tr><td>你自己用命令行</td><td>终端里直接打印 <code>payH5Url</code>，复制到浏览器打开</td></tr>
   <tr><td>AI agent 帮你点</td><td>agent 把链接原样贴回对话里</td></tr>
-  <tr><td>薇欧拉在 QQ 里帮你点</td><td>她把链接单独一行发到 QQ，你在手机上点开付款</td></tr>
+  <tr><td>聊天机器人帮你点</td><td>它把链接单独一行发到 IM 里，你在手机上点开付款</td></tr>
 </table>
 <div class="box warn">
-  <span class="t">QQ 里发链接的两点注意</span>
-  <p>① 链接很长，容易被折叠，让她<b>单独一行发</b>；② 只在私聊里点餐，群里发等于把付款入口摊给所有人。</p>
+  <span class="t">IM 里发链接的两点注意</span>
+  <p>① 链接很长，容易被折叠，让机器人<b>单独一行发</b>；② 只在私聊里点餐，群里发等于把付款入口摊给所有人。</p>
 </div>
 
 <h3>4.4 付完之后</h3>
@@ -537,7 +537,7 @@ node scripts/mcd.mjs watch &lt;orderId&gt; --once --on-change "你的通知程�
   <li><b>超时先查单</b>，别重下。</li>
   <li><b>支付链接原样给</b>，不代付、不索取验证码。</li>
 </ol>
-<p>完整规则见仓库里的 <code>SKILL.md</code>；机器人接入见 <code>references/viola.md</code>。</p>
+<p>完整规则见仓库里的 <code>SKILL.md</code>；接聊天机器人见 <code>references/bot-integration.md</code>（可选）。</p>
 
 <!-- ============ 附录 ============ -->
 <h2><span class="n">9</span>附录</h2>
@@ -580,7 +580,7 @@ node scripts/mcd.mjs watch &lt;orderId&gt; --once --on-change "你的通知程�
 </ul>
 
 <footer class="note">
-  麦当劳 MCP Skill · 接入与使用指南 · 2026-11-01　|　代码 MIT，文档 CC BY 4.0
+  麦当劳 MCP · 开发者手册 · 2026-11-01　|　代码 MIT，文档 CC BY 4.0
 </footer>
 
 </body>

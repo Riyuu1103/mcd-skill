@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>麦当劳 AI 点餐 · 使用指南</title>
+<style>
+  @page { size: A4; margin: 17mm 16mm 18mm 16mm; }
+  :root{
+    --ink:#1b1f24; --muted:#5b6570; --line:#e2e6ea;
+    --brand:#c8102e; --brand2:#ffbc0d;
+    --code-bg:#f6f7f9; --tip:#eef6ff; --warn:#fff7e6; --danger:#fff1f0;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:"Microsoft YaHei","Segoe UI",system-ui,sans-serif;
+    font-size:11pt; line-height:1.85; color:var(--ink);
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3{margin:0;font-weight:700;line-height:1.35;}
+  p{margin:.55em 0;}
+  code{font-family:"Cascadia Mono",Consolas,monospace;font-size:9.5pt;background:var(--code-bg);padding:1px 5px;border-radius:3px;}
+
+  .cover{border-left:6px solid var(--brand);padding:16px 0 16px 18px;margin-bottom:16px;}
+  .cover .eyebrow{font-size:9pt;letter-spacing:.18em;color:var(--brand);font-weight:700;}
+  .cover h1{font-size:25pt;margin:8px 0 6px;}
+  .cover .sub{color:var(--muted);font-size:11pt;}
+  .cover .meta{margin-top:10px;font-size:8.5pt;color:var(--muted);}
+
+  h2{font-size:15pt;margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--brand);}
+  h2 .n{color:var(--brand);margin-right:8px;}
+  h3{font-size:12pt;margin:16px 0 6px;}
+  h3::before{content:"▎";color:var(--brand2);margin-right:4px;}
+
+  .box{border:1px solid var(--line);border-radius:6px;padding:11px 13px;margin:11px 0;page-break-inside:avoid;}
+  .tip{background:var(--tip);border-color:#cfe4fa;}
+  .warn{background:var(--warn);border-color:#f5dca8;}
+  .danger{background:var(--danger);border-color:#f7c6c2;}
+  .box .t{font-weight:700;margin-bottom:5px;display:block;}
+
+  .say{
+    background:#fafbfc;border:1px solid var(--line);border-left:4px solid var(--brand);
+    border-radius:5px;padding:10px 13px;margin:9px 0;page-break-inside:avoid;
+  }
+  .say .who{font-size:9pt;color:var(--muted);margin-bottom:3px;}
+  .say .txt{font-size:11pt;}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:10pt;page-break-inside:avoid;}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;}
+  th{background:#fafbfc;font-weight:700;}
+
+  ul,ol{margin:.5em 0 .5em 1.4em;padding:0;}
+  li{margin:.25em 0;}
+
+  .steps{counter-reset:s;margin:12px 0;padding:0;list-style:none;}
+  .steps li{position:relative;padding:9px 12px 9px 46px;border:1px solid var(--line);border-radius:6px;margin:8px 0;page-break-inside:avoid;}
+  .steps li::before{
+    counter-increment:s; content:counter(s);
+    position:absolute;left:12px;top:9px;width:24px;height:24px;border-radius:50%;
+    background:var(--brand);color:#fff;font-weight:700;font-size:10pt;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pagebreak{page-break-before:always;}
+  footer.note{margin-top:22px;padding-top:9px;border-top:1px solid var(--line);font-size:8.5pt;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">麦当劳 AI 点餐</div>
+  <h1>使用指南</h1>
+  <div class="sub">你只需要和 AI 说话，不用敲任何命令。</div>
+  <div class="meta">读者：普通用户　|　2026-11-01</div>
+</div>
+
+<h2><span class="n">1</span>这东西是干什么的</h2>
+<p>装好之后，你可以直接对 AI 说：</p>
+
+<div class="say"><div class="who">你</div><div class="txt">帮我点一份巨无霸四件套，送到我宿舍。</div></div>
+
+<p>AI 会去查你附近的麦当劳、拉出当天真实菜单、看有没有能用的优惠券、
+把总价算清楚报给你。你确认之后，它下单，然后<b>给你一个付款链接</b>——你点开付钱就行。</p>
+
+<div class="box tip">
+  <span class="t">一句话概括</span>
+  <p>AI 负责「查、挑、算、下单」，<b>付款永远是你自己扫码</b>。它碰不到你的钱。</p>
+</div>
+
+<h2><span class="n">2</span>先准备好两样东西</h2>
+<ol class="steps">
+  <li><b>一个麦当劳账号</b>（就是你平时点麦乐送、攒积分那个手机号）。<br>
+      没有的话先去麦当劳 App 或小程序注册一个。</li>
+  <li><b>一个能装技能的 AI</b>——比如 Claude Code、Cursor、Cherry Studio、
+      DeepSeek Harness 这类能对话又能读文件的 AI 助手。</li>
+</ol>
+
+<h2><span class="n">3</span>第一次：跟 AI 说一句话，再给它一串字符</h2>
+<p>你不需要懂任何技术细节，也不用看代码。把下面这段原样发过去就行。</p>
+
+<h3>第一步：让它装好</h3>
+<div class="say"><div class="who">你发给 AI</div><div class="txt">
+帮我安装并接入这个麦当劳点餐技能：<code>&lt;仓库地址&gt;</code><br>
+按里面的 SKILL.md 做，装完告诉我下一步。
+</div></div>
+
+<h3>第二步：它要一串 Token，你去取给它</h3>
+<p>AI 会让你去一个网址拿这串字符。流程是：</p>
+<ol>
+  <li>打开 <b>https://open.mcd.cn/mcp</b></li>
+  <li>右上角【登录】→ 填手机号 → 收验证码</li>
+  <li>登录后点右上角【控制台】→【激活】→ 同意条款</li>
+  <li>屏幕上会出现一串字符，点【复制】</li>
+  <li>把这串字符<b>直接粘给 AI</b></li>
+</ol>
+
+<div class="box warn">
+  <span class="t">这串 Token 是什么</span>
+  <p>它只是「允许 AI 帮你查麦当劳」的通行证，<b>不是你的账号密码</b>，
+  不能用来登录 App、也不能用来付钱。你随时可以在那个网站重新生成，旧的立刻失效。</p>
+</div>
+
+<h3>装好了怎么确认</h3>
+<p>直接问 AI 一句：</p>
+<div class="say"><div class="who">你</div><div class="txt">麦当劳接好了吗？我账户里有多少积分？</div></div>
+<p>它如果报得出你的积分和可领的券，就是装好了。</p>
+
+<h2><span class="n">4</span>以后怎么点单（全是说人话）</h2>
+<p class="pagebreak">你只需要会三种说法。</p>
+
+<h3>① 直接说要什么</h3>
+<div class="say"><div class="who">你</div><div class="txt">来个巨无霸套餐，到店取。</div></div>
+<div class="say"><div class="who">你</div><div class="txt">点两份麦乐鸡，一杯可乐，送到家。</div></div>
+<div class="say"><div class="who">你</div><div class="txt">老样子，再来一份。</div></div>
+
+<h3>② 不知道吃啥：让它给你挑</h3>
+<div class="say"><div class="who">你</div><div class="txt">30 块以内有什么能吃饱的？给我三个选择。</div></div>
+<div class="say"><div class="who">你</div><div class="txt">有什么套餐现在在打折？</div></div>
+
+<h3>③ 改主意</h3>
+<div class="say"><div class="who">你</div><div class="txt">刚才那个换成大杯可乐。</div></div>
+<div class="say"><div class="who">你</div><div class="txt">不要薯条了，改成鸡翅。</div></div>
+<div class="say"><div class="who">你</div><div class="txt">算了，取消。</div></div>
+
+<div class="box tip">
+  <span class="t">它每次改了东西，都应该重新报一遍总价</span>
+  <p>如果它没报，你就说：<b>「改完多少钱？」</b> —— 它必须重新算给你。
+  任何时候你不确定，都问一句「现在总共多少」。</p>
+</div>
+
+<h2><span class="n">5</span>下单那一刻，会发生什么</h2>
+<p>AI 在下单前<b>必须</b>给你一段确认，长这样：</p>
+
+<div class="say"><div class="who">AI</div><div class="txt">
+门店：麦当劳（XX 店）<br>
+商品：巨无霸四件套 ×1<br>
+　　　（小食可换成：麦旋风 +1 元 / 玉米杯 +0 元）<br>
+实付：¥58.00<br>
+取餐：约 15 分钟后到店自取<br>
+—— 下单吗？
+</div></div>
+
+<p>你回一句「好」「下单」「确认」都行。它才会真的下单。</p>
+
+<p>下单成功后，它会给你两样东西：</p>
+<ul>
+  <li><b>订单号</b>（后面查进度、取消要用）</li>
+  <li><b>一条支付链接</b>（很长的一串网址）</li>
+</ul>
+
+<h2><span class="n">6</span>钱怎么付</h2>
+<ol class="steps">
+  <li><b>点开那条链接。</b>它会打开麦当劳自己的付款页面。</li>
+  <li><b>在页面里选支付方式。</b>微信、支付宝、云闪付、银行卡——
+      支持哪些由麦当劳的收银台决定，AI 和这个技能都<b>不参与、也看不到</b>你的支付信息。</li>
+  <li><b>付完回来跟 AI 说一声「付好了」</b>，它会去查订单状态。</li>
+</ol>
+
+<div class="box danger">
+  <span class="t">三个不要</span>
+  <p>不要等 AI 帮你付；不要把支付密码/验证码发给任何 AI；不要相信「已经帮你付好」这种话——
+  <b>付款只有你自己能做</b>。</p>
+</div>
+
+<div class="box warn">
+  <span class="t">付款链接有时效</span>
+  <p>一般是 15 分钟左右，超时订单会自动取消。重新点一次就行，不会重复扣钱。</p>
+</div>
+
+<h2><span class="n">7</span>下单之后</h2>
+<p>付完钱，订单会依次变成：<b>配餐中 → 配送中（或制作完成）→ 已完成</b>。</p>
+<p>你可以随时问：</p>
+<div class="say"><div class="who">你</div><div class="txt">我的麦当劳到哪了？</div></div>
+
+<p>如果你的 AI 支持定时任务，也可以让它盯着，状态一变就通知你。</p>
+
+<h2><span class="n">8</span>常见情况怎么办</h2>
+<table>
+  <tr><th style="width:34%">你想做的事</th><th>这样说</th></tr>
+  <tr><td>换套餐里的小食/饮料</td><td>「套餐里的小食能换成什么？」→ 它会念给你听；<b>真要换得去麦当劳 App</b>，或者让它按单点重新组一套</td></tr>
+  <tr><td>改配送地址</td><td>「换一个地址，送到 XXX」</td></tr>
+  <tr><td>加一份小食</td><td>「再加一份薯条，多少钱？」</td></tr>
+  <tr><td>取消订单</td><td>「取消刚才那单」→ 它要问你原因</td></tr>
+  <tr><td>用优惠券</td><td>「有什么券能用？」「帮我把能用的券都用上」</td></tr>
+  <tr><td>积分快过期</td><td>「我积分是不是要过期了？」</td></tr>
+  <tr><td>查历史订单</td><td>「我上次点的是什么？」</td></tr>
+</table>
+
+<h2><span class="n">9</span>你的信息安全吗</h2>
+<table>
+  <tr><th style="width:32%">问题</th><th>答案</th></tr>
+  <tr><td>这个技能里存了我的个人信息吗</td><td><b>没有。</b>你下载到的只是一个空壳程序 + 说明书</td></tr>
+  <tr><td>我的地址、电话存在哪</td><td>只存在<b>你自己电脑上</b>的一个配置文件里，不会上传、不会跟着分享出去</td></tr>
+  <tr><td>订单信息发给谁了</td><td>只发给麦当劳（<code>mcp.mcd.cn</code>），没有第三方</td></tr>
+  <tr><td>AI 会看到我的地址吗</td><td>会——因为它要拿去下单。<b>这是功能本身要求的</b>，不是泄漏</td></tr>
+  <tr><td>支付信息呢</td><td>技能和 AI 都<b>碰不到</b>。付款在麦当劳的页面里完成</td></tr>
+</table>
+
+<div class="box danger">
+  <span class="t">唯一要注意的</span>
+  <p>你在什么 AI 里跟它聊天，你的地址就会发给<b>那个 AI 服务商</b>。
+  选哪家 AI，就等于选谁看你的收货地址。别在群里点餐，别把地址贴进公开聊天。</p>
+</div>
+
+<h2><span class="n">10</span>出问题了</h2>
+<table>
+  <tr><th style="width:36%">现象</th><th>怎么办</th></tr>
+  <tr><td>AI 说「Token 无效」</td><td>去 https://open.mcd.cn/mcp 重新复制一次，粘给它</td></tr>
+  <tr><td>它说找不到店</td><td>告诉它一个具体地址或地标，麦当劳的服务不认 GPS 定位</td></tr>
+  <tr><td>价格和菜单上不一样</td><td>正常。到店价、外送价、活动价、券各算各的，<b>以「实付」为准</b></td></tr>
+  <tr><td>下单了但没收到链接</td><td>让它「查一下订单」，别让它重新下一单（会扣两次钱）</td></tr>
+  <tr><td>它一直问东问西</td><td>先一次性说全：门店 + 送哪儿 + 要什么 + 大概预算</td></tr>
+</table>
+
+<footer class="note">
+  麦当劳 AI 点餐 · 使用指南　|　本项目是第三方工具，与麦当劳中国无隶属关系。<br>
+  价格、库存、活动与支付渠道以麦当劳官方页面为准。　|　技术细节见《开发者手册》。
+</footer>
+
+</body>
+</html>
