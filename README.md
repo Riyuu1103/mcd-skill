@@ -47,7 +47,7 @@ node scripts/mcd.mjs home
 ## 安装
 
 ```bash
-git clone https://github.com/<you>/mcd-skill.git
+git clone https://github.com/Riyuu1103/mcd-skill.git
 cd mcd-skill
 node scripts/mcd.mjs status        # 没配 Token 会提示怎么做
 ```
