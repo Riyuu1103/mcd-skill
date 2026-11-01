@@ -254,6 +254,52 @@ node scripts/mcd.mjs profile set notify "node 你的推送脚本"
 **注意**：AI 助手**不会自己常驻**。一次对话结束它就不动了，所以「让它盯着」这句话本身不构成推送 ——
 必须落到上面三种之一。
 
+### 6.4 接任意 bot：`notify`（不用写代码）
+
+`scripts/notify.mjs` 是个通用分发器，目标全写在配置里，**支持三种出口**：
+
+| 出口 | 适用 |
+|---|---|
+| `webhook` | 任意 HTTP 接口 —— QQ/飞书/钉钉/Slack/Bark/自建服务都行 |
+| `telegram` | Telegram Bot API |
+| `command` | 交给任意命令行程序（连脚本都不用写） |
+
+**一条命令接入**（会自动把 `profile.notify` 设好，之后 `watch` 直接用它）：
+
+```bash
+node scripts/mcd.mjs notify add --type webhook --url "https://你的机器人回调地址"
+node scripts/mcd.mjs notify test          # 立刻发一条测试，看通不通
+```
+
+**webhook 的请求体**是 `{"text": "..."}`；要对接别的格式就自己给 `--body`：
+
+```bash
+# 飞书
+notify add --type webhook --url "https://open.feishu.cn/open-apis/bot/v2/hook/xxx" \
+  --body '{"msg_type":"text","content":{"text":"{{text}}"}}'
+# 钉钉
+notify add --type webhook --url "https://oapi.dingtalk.com/robot/send?access_token=xxx" \
+  --body '{"msgtype":"text","text":{"content":"{{text}}"}}'
+# Bark（iOS 推送，直接拼进 URL）
+notify add --type webhook --method GET --url "https://api.day.app/你的key/麦当劳-{status}"
+```
+
+`{{text}}` 会被替换成**已经 JSON 转义**的整段文案；`{status}` `{orderId}` `{code}` `{amount}`
+在任何位置（含 URL）都能用。
+
+**其它子命令**：
+
+```bash
+node scripts/mcd.mjs notify list                  # 看当前目标
+node scripts/mcd.mjs notify remove 2              # 删第 2 个
+node scripts/mcd.mjs notify text "🍟 {status}！"   # 改文案
+node scripts/mcd.mjs notify test --status 配送中   # 换内容再测
+```
+
+**最后一道门（最自由）**：如果你有现成的推送脚本，直接 `--on-change` 指过去就行，
+它会继承 `MCD_STATUS` / `MCD_ORDER_ID` / `MCD_CODE` / `MCD_AMOUNT` 和 `MCD_TEXT` 环境变量，
+不限定语言、不限定平台。
+
 ## 7. 硬性安全规则
 
 1. **不可逆动作必须有明确同意**：`create-order`、`cancel-order`、`mall-create-order`、

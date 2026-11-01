@@ -305,3 +305,35 @@ Linux/macOS 就一行 cron：
 
 回调命令写在 `profile set notify "…"`，watch 会自动取用。
 
+### 14.4 接任意 bot：`notify.mjs`
+
+`scripts/notify.mjs` 是通用分发器，读 `config.json` 的 `notify.targets`，支持：
+
+| type | 关键字段 | 说明 |
+|---|---|---|
+| `webhook` | `url`（必填）、`method`、`headers`、`body`、`timeoutMs` | 任意 HTTP 接口 |
+| `telegram` | `token`、`chatId` | 走 Bot API |
+| `command` | `cmd`、`timeoutMs` | 任意命令行程序 |
+
+```bash
+node scripts/mcd.mjs notify add --type webhook --url "https://..."
+node scripts/mcd.mjs notify test
+```
+
+`notify add` 第一次执行时会**自动**把 `profile.notify` 设成
+`node "<仓库>/scripts/notify.mjs"`，所以后面 `watch --last --once` 不用再带 `--on-change`。
+
+**模板规则**：
+
+- `{{text}}` → 整段文案，**已做 JSON 转义**（直接塞进 JSON 字符串里安全）
+- `{status}` `{orderId}` `{code}` `{amount}` → 原样替换，URL 里也能用
+- 文案本身用 `notify text "…"` 改，默认 `麦当劳｜{status} / 订单 {orderId}`
+- 空字段对应的整行会被去掉，不会留下「取餐码 」这种尾巴
+
+**自测踩过的坑**：写测试脚本时**不能**用 `spawnSync` 调 CLI ——
+它会把自身事件循环堵住，导致你自己起的本地 HTTP 服务无法响应，测试必然超时。
+用异步 `execFile` / `spawn` 才对。这不是产品 bug，是测试写法。
+
+**最自由的做法**：不用 notify.mjs，直接 `--on-change "你的程序"`，
+它会继承 `MCD_STATUS` / `MCD_ORDER_ID` / `MCD_CODE` / `MCD_AMOUNT` / `MCD_TEXT`。
+

@@ -484,6 +484,39 @@ sh.Run "cmd /c node ""&lt;仓库&gt;\scripts\mcd.mjs"" watch --last --once --qui
 <p><b>Linux / macOS</b> 就一行 cron：</p>
 <pre><code>*/2 * * * * cd /path/to/mcd-skill &amp;&amp; node scripts/mcd.mjs watch --last --once --quiet &gt;&gt; watch.log 2&gt;&amp;1</code></pre>
 
+<h3>6.2 接任意 bot：notify（不用写代码）</h3>
+<p><code>scripts/notify.mjs</code> 是通用分发器，目标写在配置里，三种出口：</p>
+<table>
+  <tr><th style="width:18%">type</th><th style="width:36%">关键字段</th><th>说明</th></tr>
+  <tr><td><code>webhook</code></td><td><code>url</code>（必填）/ <code>method</code> / <code>headers</code> / <code>body</code></td><td>任意 HTTP 接口：QQ、飞书、钉钉、Slack、Bark、自建服务</td></tr>
+  <tr><td><code>telegram</code></td><td><code>token</code> / <code>chatId</code></td><td>Telegram Bot API</td></tr>
+  <tr><td><code>command</code></td><td><code>cmd</code></td><td>任意命令行程序</td></tr>
+</table>
+<pre><code>node scripts/mcd.mjs notify add --type webhook --url "https://你的机器人回调地址"
+node scripts/mcd.mjs notify test        # 立刻发一条，验证通不通
+node scripts/mcd.mjs notify list        # 看当前目标
+node scripts/mcd.mjs notify remove 2    # 删掉第 2 个
+node scripts/mcd.mjs notify text "🍟 {status}！"</code></pre>
+<p>第一次 <code>notify add</code> 会<b>自动</b>把 <code>profile.notify</code> 设成
+<code>node "&lt;仓库&gt;/scripts/notify.mjs"</code>，之后 <code>watch --last --once</code> 不用再带 <code>--on-change</code>。</p>
+<p><b>模板</b>：<code>{{text}}</code> = 已 JSON 转义的整段文案；<code>{status}</code> <code>{orderId}</code>
+<code>{code}</code> <code>{amount}</code> 原样替换（URL 里也能用）。默认请求体是 <code>{"text":"…"}</code>，
+对接别家自己给 <code>--body</code>：</p>
+<pre><code># 飞书
+--body '{"msg_type":"text","content":{"text":"{{text}}"}}'
+# 钉钉
+--body '{"msgtype":"text","text":{"content":"{{text}}"}}'
+# Bark（iOS），URL 里直接带内容
+--method GET --url "https://api.day.app/你的key/麦当劳-{status}"</code></pre>
+<div class="box warn">
+  <span class="t">写自测脚本时的一个坑</span>
+  <p>用 <code>spawnSync</code> 调 CLI 会把自身事件循环堵住，你起的本地 HTTP 服务就没法响应，
+  测试必然超时。用异步 <code>execFile</code>/<code>spawn</code>。这不是产品 bug。</p>
+</div>
+<p><b>最后一道门</b>：不想用 notify.mjs，就 <code>--on-change "你的程序"</code>，
+它会继承 <code>MCD_STATUS</code> / <code>MCD_ORDER_ID</code> / <code>MCD_CODE</code> /
+<code>MCD_AMOUNT</code> / <code>MCD_TEXT</code>，不限语言不限平台。</p>
+
 <!-- ============ 7 隐私 ============ -->
 <div class="pagebreak"></div>
 <h2><span class="n">7</span>隐私：你的信息去哪了</h2>

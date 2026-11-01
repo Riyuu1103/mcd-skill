@@ -3,7 +3,7 @@
 // 用法见 README.md / SKILL.md。零依赖，Node 18+。
 
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from 'node:fs';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -1234,6 +1234,102 @@ async function main() {
       if (text.length > 50) out(`注意：长度 ${text.length} 字，超过 50 字的部分下单时会被截断。`);
       setProfilePath('taste.notes', text);
       return out(`口味备注已设为：${text}`);
+    }
+
+    /* ── 通知目标（接任意 bot 的那道门） ── */
+    case 'notify': {
+      const sub = rest[0] || 'list';
+      const cfg = loadConfig();
+      const cfgNotify = (cfg.notify = cfg.notify || {});
+      cfgNotify.targets = Array.isArray(cfgNotify.targets) ? cfgNotify.targets : [];
+      const save = () => saveConfig(cfg);
+
+      if (sub === 'list' || sub === 'show') {
+        out(`文案模板：${cfgNotify.text || '（默认）麦当劳｜{status} / 订单 {orderId}'}`);
+        if (!cfgNotify.targets.length) {
+          out('');
+          out('还没有配置任何通知目标。可以用：');
+          out('  notify add --type webhook  --url "https://你的机器人回调地址"');
+          out('  notify add --type telegram --token "123:ABC" --chat-id "123456"');
+          out('  notify add --type command  --cmd "你的推送程序"');
+          return;
+        }
+        out('');
+        cfgNotify.targets.forEach((t, i) => {
+          out(`${i + 1}. ${t.type}  ${t.url || t.chatId || t.cmd || ''}`);
+        });
+        out('');
+        out('自测：node scripts/mcd.mjs notify test');
+        return;
+      }
+
+      if (sub === 'add') {
+        const type = String(flags.type || '');
+        if (!['webhook', 'telegram', 'command'].includes(type)) {
+          return die('--type 只能是 webhook / telegram / command');
+        }
+        const t = { type };
+        if (type === 'webhook') {
+          if (!flags.url) return die('webhook 需要 --url');
+          t.url = String(flags.url);
+          if (flags.method) t.method = String(flags.method);
+          if (flags.body) t.body = String(flags.body);
+        } else if (type === 'telegram') {
+          if (!flags.token || !(flags['chat-id'] || flags.chatId)) return die('telegram 需要 --token 和 --chat-id');
+          t.token = String(flags.token);
+          t.chatId = String(flags['chat-id'] || flags.chatId);
+        } else {
+          if (!flags.cmd) return die('command 需要 --cmd');
+          t.cmd = String(flags.cmd);
+        }
+        cfgNotify.targets.push(t);
+        save();
+
+        // 第一次配目标时顺手把 notify 命令设好，省得再记一条命令
+        const prof = cfg.profile || (cfg.profile = {});
+        if (!prof.notify) {
+          prof.notify = `node "${resolve(HERE, 'notify.mjs')}"`;
+          save();
+          out(`同时把通知命令设成了：${prof.notify}`);
+        }
+
+        out(`已添加第 ${cfgNotify.targets.length} 个通知目标：${type}`);
+        out('接着跑一次 node scripts/mcd.mjs notify test 验证一下。');
+        return;
+      }
+
+      if (sub === 'remove' || sub === 'rm') {
+        const i = Number(rest[1] || flags.index);
+        if (!i || i < 1 || i > cfgNotify.targets.length) return die('用法：notify remove <序号>（先 notify list）');
+        const [gone] = cfgNotify.targets.splice(i - 1, 1);
+        save();
+        return out(`已删除：${gone.type} ${gone.url || gone.chatId || gone.cmd || ''}`);
+      }
+
+      if (sub === 'text') {
+        const txt = rest.slice(1).join(' ').trim();
+        if (!txt) return out(`当前模板：${cfgNotify.text || '（默认）'}`);
+        cfgNotify.text = txt;
+        save();
+        return out(`文案模板已设为：${txt}`);
+      }
+
+      if (sub === 'test') {
+        const r = spawnSync(process.execPath, [resolve(HERE, 'notify.mjs')], {
+          stdio: 'inherit',
+          env: {
+            ...process.env,
+            MCD_STATUS: flags.status ? String(flags.status) : '测试通知',
+            MCD_ORDER_ID: 'TEST-0000',
+            MCD_CODE: 'A123',
+            MCD_AMOUNT: '36.10',
+          },
+        });
+        if (r.status !== 0) out('（有目标发送失败，看上面的输出）');
+        return;
+      }
+
+      return die(`未知子命令：notify ${sub}\n可用：list / add / remove / text / test`);
     }
 
     case 'cancel': {
