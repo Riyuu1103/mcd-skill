@@ -1,0 +1,587 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>麦当劳 MCP Skill · 接入与使用指南</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+
+  :root{
+    --ink:#1b1f24;
+    --muted:#5b6570;
+    --line:#dfe3e8;
+    --brand:#c8102e;      /* 麦当劳红 */
+    --brand2:#ffbc0d;     /* 麦当劳黄 */
+    --code-bg:#f6f7f9;
+    --tip:#eef6ff;
+    --warn:#fff7e6;
+    --danger:#fff1f0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Microsoft YaHei","Segoe UI",system-ui,-apple-system,sans-serif;
+    font-size:10.5pt; line-height:1.72; color:var(--ink);
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  h1,h2,h3,h4{margin:0;font-weight:700;line-height:1.3;}
+  p{margin:.5em 0;}
+  code,kbd{font-family:"Cascadia Mono",Consolas,"Courier New",monospace;font-size:9pt;}
+
+  /* 封面带 */
+  .cover{
+    border-left:6px solid var(--brand);
+    padding:14px 0 14px 16px;
+    margin-bottom:14px;
+  }
+  .cover .eyebrow{font-size:9pt;letter-spacing:.18em;color:var(--brand);font-weight:700;}
+  .cover h1{font-size:23pt;margin:6px 0 4px;}
+  .cover .sub{color:var(--muted);font-size:10.5pt;}
+  .cover .meta{margin-top:8px;font-size:8.5pt;color:var(--muted);}
+
+  /* 章节 */
+  h2{
+    font-size:14pt;margin:22px 0 8px;padding-bottom:5px;
+    border-bottom:2px solid var(--brand);
+  }
+  h2 .n{color:var(--brand);margin-right:8px;}
+  h3{font-size:11.5pt;margin:14px 0 5px;color:#2a3138;}
+  h3::before{content:"▎";color:var(--brand2);margin-right:4px;}
+
+  /* 块 */
+  .box{border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:10px 0;page-break-inside:avoid;}
+  .tip{background:var(--tip);border-color:#cfe4fa;}
+  .warn{background:var(--warn);border-color:#f5dca8;}
+  .danger{background:var(--danger);border-color:#f7c6c2;}
+  .box .t{font-weight:700;margin-bottom:4px;display:block;}
+
+  pre{
+    background:var(--code-bg);border:1px solid var(--line);border-left:3px solid var(--brand2);
+    border-radius:4px;padding:9px 11px;margin:8px 0;overflow:visible;
+    white-space:pre-wrap;word-break:break-all;page-break-inside:avoid;
+  }
+  pre code{font-size:9pt;line-height:1.6;}
+
+  table{width:100%;border-collapse:collapse;margin:9px 0;font-size:9.5pt;page-break-inside:avoid;}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;}
+  th{background:#fafbfc;font-weight:700;}
+  td code{background:var(--code-bg);padding:1px 4px;border-radius:3px;}
+
+  ul,ol{margin:.45em 0 .45em 1.25em;padding:0;}
+  li{margin:.18em 0;}
+
+  /* 速览卡 */
+  .quick{
+    display:flex;gap:10px;margin:12px 0 6px;
+  }
+  .quick .card{
+    flex:1;border:1px solid var(--line);border-top:3px solid var(--brand);
+    border-radius:6px;padding:9px 10px;page-break-inside:avoid;
+  }
+  .quick .card .h{font-weight:700;font-size:10pt;margin-bottom:3px;}
+  .quick .card .b{font-size:9pt;color:var(--muted);line-height:1.55;}
+
+  .kicker{font-size:9pt;color:var(--muted);margin:-2px 0 8px;}
+
+  .flow{display:flex;align-items:stretch;gap:0;margin:10px 0;page-break-inside:avoid;}
+  .flow .step{
+    flex:1;border:1px solid var(--line);border-radius:6px;padding:8px;
+    font-size:8.8pt;line-height:1.5;background:#fff;
+  }
+  .flow .arrow{display:flex;align-items:center;padding:0 6px;color:var(--brand);font-weight:700;}
+
+  .pagebreak{page-break-before:always;}
+  .avoid{page-break-inside:avoid;}
+  .small{font-size:9pt;color:var(--muted);}
+  footer.note{margin-top:18px;padding-top:8px;border-top:1px solid var(--line);font-size:8.5pt;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">麦当劳中国 MCP · 第三方客户端</div>
+  <h1>接入与使用指南</h1>
+  <div class="sub">零依赖 Node 客户端 · 36 个官方工具 · 一条命令点一单</div>
+  <div class="meta">
+    文档版本 1.0　|　适配 MCP 服务 1.0.9（2026-09-10）　|　2026-11-01
+  </div>
+</div>
+
+<!-- ============ 一页速览 ============ -->
+<h2><span class="n">0</span>先看这一页</h2>
+<p class="kicker">如果只读一页，读这页。下面是全部要点，其余章节都是展开说明。</p>
+
+<div class="quick">
+  <div class="card">
+    <div class="h">① 拿 Token</div>
+    <div class="b">
+      打开 <b>open.mcd.cn/mcp</b><br>
+      手机号登录 → 控制台 → 激活<br>
+      复制那串 Token
+    </div>
+  </div>
+  <div class="card">
+    <div class="h">② 装（其实不用装）</div>
+    <div class="b">
+      只要有 Node 18+<br>
+      没有 npm install<br>
+      没有构建步骤
+    </div>
+  </div>
+  <div class="card">
+    <div class="h">③ 登录</div>
+    <div class="b">
+      <code>mcd login &lt;token&gt;</code><br>
+      <code>mcd home</code> 看一眼<br>
+      就能用了
+    </div>
+  </div>
+</div>
+
+<pre><code>git clone &lt;本仓库&gt; &amp;&amp; cd mcd-skill
+node scripts/mcd.mjs login 你的Token
+node scripts/mcd.mjs home
+
+# 设一次偏好，以后不用再说
+node scripts/mcd.mjs profile set city 上海
+node scripts/mcd.mjs stores                 # 查门店
+node scripts/mcd.mjs profile use-store 1    # 认准一家
+
+# 点一单
+node scripts/mcd.mjs price --item "巨无霸:1"
+node scripts/mcd.mjs order --item "巨无霸:1" --confirm</code></pre>
+
+<div class="box danger">
+  <span class="t">三条不能忘的事</span>
+  <ol>
+    <li><b>钱永远你自己付。</b>程序只生成订单和支付链接，不代付、不碰支付凭证。</li>
+    <li><b>下单要加 <code>--confirm</code>。</b>不加就只算价、不下单——这是故意的护栏。</li>
+    <li><b>包内没有任何个人信息。</b>门店、地址、电话、备注全存在你自己电脑的
+      <code>%APPDATA%\mcd-mcp\config.json</code> 里，不随仓库分发。</li>
+  </ol>
+</div>
+
+<!-- ============ 1 接入 ============ -->
+<h2><span class="n">1</span>接入</h2>
+
+<h3>1.1 Token 怎么拿</h3>
+<ol>
+  <li>打开 <b>https://open.mcd.cn/mcp</b>，右上角【登录】，手机号 + 验证码。</li>
+  <li>登录后右上角变成【控制台】→ 点【激活】→ 同意《使用条款》。</li>
+  <li>Token 生成后一键复制。</li>
+</ol>
+<div class="box tip">
+  <span class="t">Token 是什么</span>
+  <p>它只代表「你有权调用麦当劳 MCP 服务」，<b>不是账号密码</b>，不能用来登录麦当劳 App、不能付款。
+  同一个账号的订单/积分/券，是靠 Token 背后的手机号关联的。</p>
+</div>
+
+<h3>1.2 三种接法，按你的环境选一种</h3>
+<table>
+  <tr><th style="width:22%">场景</th><th style="width:30%">怎么做</th><th>说明</th></tr>
+  <tr>
+    <td><b>A. 用命令行</b><br><span class="small">推荐，任何环境都行</span></td>
+    <td><code>node scripts/mcd.mjs &lt;命令&gt;</code></td>
+    <td>不依赖任何客户端。AI agent 有 shell 就能用；人自己也能用。</td>
+  </tr>
+  <tr>
+    <td><b>B. 原生 MCP</b><br><span class="small">客户端支持 MCP 时</span></td>
+    <td>填一段 JSON（见下）</td>
+    <td>36 个工具直接进模型工具列表。代价：每轮对话都背着 36 份 schema。</td>
+  </tr>
+  <tr>
+    <td><b>C. 直接问 AI</b><br><span class="small">把 SKILL.md 交给它</span></td>
+    <td>把 <code>SKILL.md</code> 丢给 agent</td>
+    <td>agent 读完就知道先查什么、什么不能做。</td>
+  </tr>
+</table>
+
+<p><b>B 方式的配置：</b></p>
+<pre><code>{
+  "mcpServers": {
+    "mcd-mcp": {
+      "type": "streamablehttp",
+      "url": "https://mcp.mcd.cn",
+      "headers": { "Authorization": "Bearer 你的Token" }
+    }
+  }
+}</code></pre>
+
+<h3>1.3 自检</h3>
+<pre><code>node scripts/mcd.mjs status</code></pre>
+<p>正常会打印：连接正常、协议版本 <code>2025-06-18</code>、工具数量 <code>36</code>。<br>
+报 <b>401</b> = Token 错或过期；报 <b>429</b> = 一分钟超过 600 次请求，等一会儿。</p>
+
+<!-- ============ 2 偏好 ============ -->
+<div class="pagebreak"></div>
+<h2><span class="n">2</span>第一次配置：让他记住你</h2>
+<p class="kicker">这一步只用做一次。做完之后，每条命令都不用再重复「哪家店、送到哪、要不要餐具」。</p>
+
+<h3>2.1 城市和门店</h3>
+<pre><code>node scripts/mcd.mjs profile set city 上海
+node scripts/mcd.mjs profile set keyword 中山北路3663号   # 找店用的地标，随便写个附近的地方
+node scripts/mcd.mjs stores                              # 出来 5 家，带编号
+node scripts/mcd.mjs profile use-store 1                 # 第 1 家设为默认</code></pre>
+<div class="box warn">
+  <span class="t">麦当劳 MCP 不支持 GPS 定位</span>
+  <p>所以「附近的店」必须靠你给一个<b>文字地址或地标</b>，程序没法自己知道你在哪。</p>
+</div>
+
+<h3>2.2 收货地址、联系人、电话</h3>
+<p>点外卖（麦乐送）必须有收货地址。有两种用法：</p>
+
+<p><b>用法一：用账号里已经存过的地址（最省事）</b></p>
+<pre><code>node scripts/mcd.mjs address          # 列出账号里全部地址，带编号
+node scripts/mcd.mjs address use 3    # 第 3 个设为默认
+
+node scripts/mcd.mjs price --mode delivery --item "巨无霸:1"</code></pre>
+
+<p><b>用法二：新建一个地址</b></p>
+<pre><code>node scripts/mcd.mjs address new \
+  --name 张三 \
+  --phone 13800138000 \
+  --city 上海 \
+  --addr 中山北路3663号 \
+  --detail "12号楼301室" \
+  --confirm</code></pre>
+
+<table>
+  <tr><th style="width:16%">参数</th><th style="width:26%">含义</th><th>备注</th></tr>
+  <tr><td><code>--name</code></td><td>收货人姓名</td><td>可以只写姓</td></tr>
+  <tr><td><code>--phone</code></td><td>手机号</td><td><b>必须 11 位纯数字</b>，程序会校验</td></tr>
+  <tr><td><code>--city</code></td><td>城市</td><td>如「上海」</td></tr>
+  <tr><td><code>--addr</code></td><td>街道地址</td><td>路名门牌</td></tr>
+  <tr><td><code>--detail</code></td><td>门牌细节</td><td>楼栋/单元/房间，骑手靠这个找到你</td></tr>
+  <tr><td><code>--gender</code></td><td>称谓</td><td>选填，「先生」「女士」</td></tr>
+</table>
+
+<div class="box tip">
+  <span class="t">电话会不会被记下来？</span>
+  <p>建地址时电话<b>必须发给麦当劳</b>（不然骑手联系不到你）。但<b>本地不会把它抄进配置文件</b>——
+  之后从接口拉回来的地址列表里，电话本来就是<b>打码</b>的（<code>138****5678</code> 这种）。</p>
+</div>
+
+<h3>2.3 备注（口味、配送要求）</h3>
+<pre><code>node scripts/mcd.mjs remark "不要生菜，可乐去冰"
+node scripts/mcd.mjs remark                          # 看当前备注
+node scripts/mcd.mjs remark clear                    # 清掉</code></pre>
+<table>
+  <tr><th style="width:26%">什么时候生效</th><th>说明</th></tr>
+  <tr><td><b>麦乐送外送单</b></td><td>作为订单的 <code>remark</code> 字段真实传给门店和骑手，<b>上限 50 字</b>，超了自动截断。</td></tr>
+  <tr><td><b>到店自取单</b></td><td>接口没有备注字段，<b>不会</b>传给厨房。备注只用来提醒你自己。</td></tr>
+</table>
+<div class="box warn">
+  <span class="t">「少冰」「不要番茄酱」这类</span>
+  <p>如果某样餐品支持「特制」（去冰、不加酱），要在 <code>query-meal-detail</code> 里拿到它自己的特制编码才能生效，
+  不是所有商品都支持。备注字段只是<b>给门店看的一句话</b>，不是点单选项。</p>
+</div>
+
+<h3>2.4 其余偏好一览</h3>
+<table>
+  <tr><th style="width:26%">命令</th><th>作用</th></tr>
+  <tr><td><code>profile set mode delivery</code></td><td>默认取餐方式：<code>pickup</code> 到店 / <code>dt</code> 得来速 / <code>delivery</code> 麦乐送</td></tr>
+  <tr><td><code>profile set taste.tableware true</code></td><td>默认要餐具</td></tr>
+  <tr><td><code>profile set budget 30</code></td><td>单餐预算，超了只提示、不拦</td></tr>
+  <tr><td><code>profile set autoCoupon false</code></td><td>关掉「算价时自动挑最省的券」</td></tr>
+  <tr><td><code>profile</code></td><td>打印全部偏好</td></tr>
+  <tr><td><code>profile clear</code></td><td>清空全部偏好（Token 保留）</td></tr>
+</table>
+
+<!-- ============ 3 点单 ============ -->
+<div class="pagebreak"></div>
+<h2><span class="n">3</span>点一单</h2>
+
+<h3>3.1 到店自取（最常用）</h3>
+<pre><code>node scripts/mcd.mjs menu --grep 巨无霸
+node scripts/mcd.mjs price --item "巨无霸:1" --item "中薯条:1"
+node scripts/mcd.mjs order --item "巨无霸:1" --item "中薯条:1" --confirm</code></pre>
+<p><code>price</code> 会自动完成：拉菜单（缓存 10 分钟）→ 把「巨无霸」解析成商品编码 →
+查本店可用券 → 逐张试价 → 挑最省的 → 算总价。名字不用写全，写编码也行。</p>
+
+<h3>3.2 麦乐送（外卖）</h3>
+<pre><code>node scripts/mcd.mjs price --mode delivery --item "巨无霸:1"
+node scripts/mcd.mjs order --mode delivery --item "巨无霸:1" --confirm</code></pre>
+
+<h3>3.3 预约（指定时间送到/取）</h3>
+<pre><code>node scripts/mcd.mjs price --item "巨无霸:1" --at "2026-11-02 18:00"</code></pre>
+
+<h3>3.4 再来一单</h3>
+<pre><code>node scripts/mcd.mjs history 5     # 看最近几单
+node scripts/mcd.mjs reorder       # 上一单按当前门店重新算价
+node scripts/mcd.mjs reorder --confirm</code></pre>
+
+<div class="box warn">
+  <span class="t">下单前一定要核对四样</span>
+  <p><b>门店 · 商品与数量 · 实付金额 · 取餐/送达时间</b>。金额单位是「元」，程序已经换算好了。</p>
+</div>
+
+<h3>3.5 套餐：先看能换什么，再报价</h3>
+<p>点套餐（名字带「三件套 / 四件套 / 组合 / 随心配」）时多走一步：</p>
+<pre><code>node scripts/mcd.mjs detail "巨无霸四件套"</code></pre>
+<p>它会列出这套餐由几部分组成、每部分默认是什么、<b>还能换成什么、各加多少钱</b>：</p>
+<pre><code>  组成 4 项：
+  2) 小食 ×1
+      ★ 中薯条
+      可换成（8 个）：
+        · 蓝莓爆爆珠麦旋风          + ¥1
+        · 奥利奥麦旋风              + ¥2
+        · 大杯玉米杯                + ¥2.5
+  4) 选择套餐内饮料 ×1
+      ★ 可乐中杯
+      可换成（29 个）：雪碧 +¥0 / 拿铁 +¥11 …</code></pre>
+
+<div class="box danger">
+  <span class="t">能不能直接改？——不能</span>
+  <p>实测：把替换写成 <code>modification</code> 传进算价接口，价格和商品清单<b>完全不变</b>。
+  接口只提供「看」，没有「在这个位置换那个」的字段。</p>
+  <p><b>想换只有两条路</b>：① 去麦当劳 App 里改；② 按<b>单点重组</b>（汉堡 + 单点小食 +
+  单点饮料），价格重新算。</p>
+</div>
+
+<h3>3.6 每次变动都要重报总价</h3>
+<p>商品、规格、数量、券、取餐方式<b>任何一项变了</b>，都要重新 <code>price</code>，
+并明确说出新的实付金额和「比上一版多/少 ¥X」。永远不要沿用上一轮的金额。</p>
+
+<table>
+  <tr><th style="width:40%">同一份套餐的三种价</th><th>例子</th></tr>
+  <tr><td>菜单标价（浏览时看到的）</td><td>¥29</td></tr>
+  <tr><td>算价（<code>calculate-price</code>，单位是分）</td><td>¥58.00</td></tr>
+  <tr><td>实付（下单后 <code>realTotalAmount</code>）</td><td>¥33.50</td></tr>
+</table>
+<p class="small">这三个数可以都不一样：到店价、外送价、活动价、券、配送费、包装费各算各的。
+<b>报价只用 <code>price</code> 的「▶ 实付」</b>；菜单价和算价不一致时程序会打 ⚠️，
+照实转述，别只挑一个数字报。</p>
+
+<!-- ============ 4 付款 ============ -->
+<h2><span class="n">4</span>钱怎么付（重点）</h2>
+
+<h3>4.1 它给的不是「付款码」，是一个支付链接</h3>
+<p>下单成功后，麦当劳返回三个东西：</p>
+<table>
+  <tr><th style="width:20%">字段</th><th style="width:26%">是什么</th><th>怎么用</th></tr>
+  <tr><td><code>orderId</code></td><td>订单号</td><td>查进度、取消、找客服</td></tr>
+  <tr><td><code>payH5Url</code></td><td><b>支付页链接（H5）</b></td><td>点开 → 麦当劳自己的收银台 → 选支付方式 → 付钱</td></tr>
+  <tr><td><code>pickupCode</code><br><code>lockerQrCode</code></td><td>取餐码 / 取餐柜二维码</td><td><b>取餐用的，不是付款用的</b>，别搞混</td></tr>
+</table>
+
+<div class="box danger">
+  <span class="t">付款码 vs 取餐码</span>
+  <p><b>付款码</b>=收银台弹出的、给钱包 App 扫的码（在 <code>payH5Url</code> 那个页面里）。<br>
+  <b>取餐码</b>=付完钱、餐做好了给你领餐用的号，和钱无关。</p>
+</div>
+
+<h3>4.2 支持微信还是支付宝？</h3>
+<p><b>程序不决定，麦当劳的收银台决定。</b> MCP 把所有支付相关的事都收敛成一个 <code>payH5Url</code>：
+你在浏览器/微信里打开它，页面里提供哪些支付渠道（微信支付、支付宝、云闪付、银行卡等），
+由麦当劳根据设备、场景、地区实时决定。接口层<b>没有</b>「支付方式」这个字段，也不返回支付二维码图片。</p>
+
+<div class="box tip">
+  <span class="t">所以正确的说法是</span>
+  <p>它<b>不挑支付方式、也不限制支付方式</b>——它把收银台交给你，你在里面怎么付都行。
+  这也是它安全的地方：客户端全程碰不到你的支付凭证。</p>
+</div>
+<p class="small">说明：以上来自接口返回字段与官方工具描述。真实订单的支付页具体呈现（有没有支付宝、能不能用余额）
+需要下第一单才能确认——本文档不把未验证的事写成结论。</p>
+
+<h3>4.3 支付链接会怎么到你手上</h3>
+<table>
+  <tr><th style="width:26%">谁在操作</th><th>形式</th></tr>
+  <tr><td>你自己用命令行</td><td>终端里直接打印 <code>payH5Url</code>，复制到浏览器打开</td></tr>
+  <tr><td>AI agent 帮你点</td><td>agent 把链接原样贴回对话里</td></tr>
+  <tr><td>薇欧拉在 QQ 里帮你点</td><td>她把链接单独一行发到 QQ，你在手机上点开付款</td></tr>
+</table>
+<div class="box warn">
+  <span class="t">QQ 里发链接的两点注意</span>
+  <p>① 链接很长，容易被折叠，让她<b>单独一行发</b>；② 只在私聊里点餐，群里发等于把付款入口摊给所有人。</p>
+</div>
+
+<h3>4.4 付完之后</h3>
+<pre><code>node scripts/mcd.mjs order-status &lt;orderId&gt;</code></pre>
+<p>订单状态：<code>1</code> 待支付 → <code>2</code> 配餐中（已支付）→ <code>4</code> 配送中 → <code>6</code> 已完成。
+支付页还有一个 <code>expirePayTime</code>，超时订单会自己取消。</p>
+
+<!-- ============ 5 券 ============ -->
+<div class="pagebreak"></div>
+<h2><span class="n">5</span>券、积分、省钱</h2>
+<pre><code>node scripts/mcd.mjs home            # 积分 + 本月将过期 + 可领券 + 上一单
+node scripts/mcd.mjs coupons         # 卡包里的券
+node scripts/mcd.mjs store-coupons   # 当前门店这张单能用的券
+node scripts/mcd.mjs points          # 积分明细</code></pre>
+<table>
+  <tr><th style="width:34%">命令 / 工具</th><th>含义</th></tr>
+  <tr><td><code>query-my-coupons</code></td><td>卡包里有什么券</td></tr>
+  <tr><td><code>query-store-coupons</code></td><td><b>这张单、这家店</b>到底哪张能用（两者不能互相替代）</td></tr>
+  <tr><td><code>available-coupons</code></td><td>麦麦省里<b>可领</b>的券</td></tr>
+  <tr><td><code>auto-bind-coupons</code></td><td>一键领光所有能领的券（<b>不可逆，要 <code>--confirm</code></b>）</td></tr>
+</table>
+<p><code>price</code> 默认会<b>自动挑最省的券</b>：把每张券在每件商品上试一遍，取实付最低的组合。
+不想要就加 <code>--no-auto-coupon</code>。</p>
+
+<!-- ============ 6 查单 ============ -->
+<h2><span class="n">6</span>查单与取消</h2>
+<pre><code>node scripts/mcd.mjs history 5              # 最近 5 单
+node scripts/mcd.mjs order-status &lt;orderId&gt;
+node scripts/mcd.mjs cancel &lt;orderId&gt; --reason 3 --confirm</code></pre>
+<p>取消原因码：<code>1</code> 改主意了 · <code>2</code> 重复下单 · <code>3</code> 点错/点多/点少 ·
+<code>4</code> 地址电话填错 · <code>5</code> 时间选错 · <code>-1</code> 其它。</p>
+<div class="box warn">
+  <span class="t">下单超时了别急着重试</span>
+  <p>先 <code>history</code> 看有没有已经生成，确认没有再重下。重复下单是要扣两次钱的。</p>
+</div>
+
+<h3>6.1 主动推送：配餐中 → 配送中 → 已送达</h3>
+<p>MCP <b>没有任何推送机制</b>，只能靠反复查 <code>query-order</code>。所以要「自动提醒」，
+就是轮询 + 一个回调命令：</p>
+<pre><code># 前台盯：每 60 秒查一次，只有状态变了才打印
+node scripts/mcd.mjs watch &lt;orderId&gt; --interval 60
+
+# 交给计划任务 / cron：每次只查一次，状态变了才触发回调
+node scripts/mcd.mjs watch &lt;orderId&gt; --once --on-change "你的通知程序 {status}"</code></pre>
+<table>
+  <tr><th style="width:26%">占位符</th><th>替换成</th></tr>
+  <tr><td><code>{status}</code></td><td>中文状态，如「配餐中」「配送中」「已完成」</td></tr>
+  <tr><td><code>{orderId}</code></td><td>订单号</td></tr>
+  <tr><td><code>{code}</code></td><td>取餐码</td></tr>
+  <tr><td><code>{amount}</code></td><td>金额</td></tr>
+</table>
+<div class="box tip">
+  <span class="t">为什么可以「每 2 分钟跑一次」</span>
+  <p><code>--once</code> 会把上次的状态记进本地缓存（24 小时），
+  <b>同一个状态不会重复通知</b>。所以丢进计划任务里是安全的，不会刷屏。</p>
+</div>
+
+<!-- ============ 7 隐私 ============ -->
+<div class="pagebreak"></div>
+<h2><span class="n">7</span>隐私：你的信息去哪了</h2>
+
+<h3>7.1 包里有你的个人信息吗</h3>
+<div class="box tip">
+  <span class="t">没有。分发包是「零个人信息」的</span>
+  <p>仓库里只有代码和文档，示例一律用「张三」「13800138000」「人民广场」这类虚构值。
+  你的门店、地址、电话、备注、Token 全部在<b>你自己电脑</b>上，不在包里。</p>
+</div>
+
+<h3>7.2 本地到底存了什么、存在哪</h3>
+<table>
+  <tr><th style="width:34%">文件</th><th style="width:26%">内容</th><th>去不去仓库</th></tr>
+  <tr>
+    <td><code>%APPDATA%\mcd-mcp\config.json</code><br><span class="small">Linux/macOS：<code>~/.config/mcd-mcp/</code></span></td>
+    <td>Token、门店、地址、备注、预算</td>
+    <td><b>不会</b>。它在系统配置目录，不在项目目录里；<code>.gitignore</code> 另外还挡了一层</td>
+  </tr>
+  <tr>
+    <td><code>…\mcd-mcp\cache\</code></td>
+    <td>菜单、门店列表缓存（10 分钟过期）</td>
+    <td><b>不会</b></td>
+  </tr>
+  <tr>
+    <td>仓库目录</td>
+    <td>只有代码、文档、生成的工具清单</td>
+    <td>会（这就是你要分享的部分）</td>
+  </tr>
+</table>
+<p>配置文件写的时候是 <b>600 权限</b>（只有你自己能读）。想彻底清掉：<code>mcd logout</code> 删 Token，
+手动删掉整个 <code>mcd-mcp</code> 目录即全部清空。</p>
+
+<h3>7.3 什么信息会被发出去</h3>
+<div class="flow">
+  <div class="step"><b>你的电脑</b><br>命令 + 本地偏好<br><span class="small">（只在这一侧）</span></div>
+  <div class="arrow">→</div>
+  <div class="step"><b>mcp.mcd.cn</b><br>只收：Token、门店码、商品码、<br>地址 ID、手机号（建地址时）</div>
+  <div class="arrow">→</div>
+  <div class="step"><b>麦当劳账户</b><br>订单、积分、券、地址</div>
+</div>
+<ul>
+  <li><b>收件人只有麦当劳。</b>本程序不往任何第三方服务器发数据，没有埋点、没有遥测、没有统计上报。</li>
+  <li><b>不收集设备信息、不读通讯录、不读相册、不定位。</b></li>
+  <li><b>手机号只在建地址时发一次</b>，之后接口回传的都是打码值。</li>
+</ul>
+
+<h3>7.4 用 AI / 聊天机器人点餐时的额外风险</h3>
+<p>这一层不是本 skill 引入的，但必须说清楚：</p>
+<table>
+  <tr><th style="width:30%">风险点</th><th>实际情况</th><th style="width:26%">怎么规避</th></tr>
+  <tr>
+    <td>AI 读到你的地址</td>
+    <td>agent 调 <code>address</code> 时，地址会进它的上下文</td>
+    <td>没有地址信息给它是调不出结果的；这是功能前提，不是泄漏</td>
+  </tr>
+  <tr>
+    <td>对话被模型服务商看到</td>
+    <td>无论用哪家 AI，上下文都会发给模型厂商</td>
+    <td>别在聊天里报完整手机号；用 <code>address use</code> 选编号，别贴全文</td>
+  </tr>
+  <tr>
+    <td>聊天记录留痕</td>
+    <td>QQ 机器人会把对话存进本地会话库</td>
+    <td>私聊里点餐；别在群里发地址和支付链接</td>
+  </tr>
+  <tr>
+    <td>Token 被看到</td>
+    <td><code>status</code> 已打码；但有人能读你屏幕就另说</td>
+    <td>别把 Token 贴进聊天、截图、issue</td>
+  </tr>
+</table>
+<div class="box danger">
+  <span class="t">一句话</span>
+  <p>本 skill 本身<b>不新增任何泄漏面</b>——它不发数据、不写日志、不把个人信息系统外传。
+  真正会看到你信息的是<b>你选的 AI 服务商</b>和<b>麦当劳</b>。选哪家 AI，等于选谁看你的地址。</p>
+</div>
+
+<!-- ============ 8 给 AI 用 ============ -->
+<h2><span class="n">8</span>交给 AI：它应该怎么用</h2>
+<ol>
+  <li><b>先设偏好再看菜单。</b>没有默认门店就问，不要猜。</li>
+  <li><b>不可逆动作必须确认。</b>下单、取消、领券、抽奖、扣积分、建地址——报清楚「门店/商品/实付/时间」再等一句「确认」。</li>
+  <li><b>金额单位。</b><code>calculate-price</code> 返回的是<b>分</b>；<code>price</code> 命令已经换成元，直接用。</li>
+  <li><b>超时先查单</b>，别重下。</li>
+  <li><b>支付链接原样给</b>，不代付、不索取验证码。</li>
+</ol>
+<p>完整规则见仓库里的 <code>SKILL.md</code>；机器人接入见 <code>references/viola.md</code>。</p>
+
+<!-- ============ 附录 ============ -->
+<h2><span class="n">9</span>附录</h2>
+
+<h3>9.1 排错</h3>
+<table>
+  <tr><th style="width:30%">现象</th><th>原因 / 处理</th></tr>
+  <tr><td><code>HTTP 401</code></td><td>Token 失效，去开放平台重新复制，再 <code>login</code></td></tr>
+  <tr><td><code>HTTP 429</code></td><td>超 600 次/分钟，等一分钟</td></tr>
+  <tr><td>「还没有默认门店」</td><td><code>stores</code> → <code>profile use-store 1</code></td></tr>
+  <tr><td>「匹配到 N 个商品」</td><td>名字写具体点，或直接给商品编码</td></tr>
+  <tr><td>算价对不上</td><td>券不适配本店/本商品，用 <code>store-coupons</code> 复核</td></tr>
+  <tr><td>菜单里没有某样</td><td>时段问题（早餐只在早市），或这家店不卖</td></tr>
+  <tr><td>PowerShell 里 JSON 报错</td><td>别手写 JSON，用 <code>k=v</code> 或 <code>--file</code></td></tr>
+  <tr><td>提示「已拦截，没有发出」</td><td>写入类命令缺 <code>--confirm</code>，核对入参后再加</td></tr>
+</table>
+
+<h3>9.2 命令总表</h3>
+<table>
+  <tr><th style="width:34%">命令</th><th>作用</th></tr>
+  <tr><td><code>login</code> / <code>logout</code> / <code>status</code> / <code>where</code></td><td>Token 与连接</td></tr>
+  <tr><td><code>home</code></td><td>积分 / 券 / 默认门店 / 上一单</td></tr>
+  <tr><td><code>profile</code>（show/set/unset/clear/use-store/use-address）</td><td>点餐偏好</td></tr>
+  <tr><td><code>address</code>（list/new/use）</td><td>收货地址</td></tr>
+  <tr><td><code>remark</code></td><td>口味 / 配送备注</td></tr>
+  <tr><td><code>stores</code> / <code>menu</code>（<code>--grep</code> <code>--cat</code> <code>--all</code>）</td><td>找店、看菜单</td></tr>
+  <tr><td><code>detail</code></td><td>套餐组成、可替换项与差价</td></tr>
+  <tr><td><code>price</code>（<code>--detail</code> <code>--brief</code>） / <code>order</code></td><td>算价与下单</td></tr>
+  <tr><td><code>history</code> / <code>reorder</code> / <code>order-status</code> / <code>watch</code> / <code>cancel</code></td><td>订单管理、盯单、取消</td></tr>
+  <tr><td><code>coupons</code> / <code>store-coupons</code> / <code>points</code></td><td>券与积分</td></tr>
+  <tr><td><code>call</code> / <code>tools</code> / <code>schema</code> / <code>doc</code></td><td>裸调用与工具清单</td></tr>
+</table>
+
+<h3>9.3 边界</h3>
+<ul>
+  <li>本项目是第三方客户端，<b>与麦当劳中国无隶属关系</b>，不构成官方背书。</li>
+  <li>价格、库存、活动、支付渠道以麦当劳官方页面与实际扣款为准。</li>
+  <li>下单、付款、退款的责任在用户本人。</li>
+  <li>服务仅面向中国大陆（不含港澳台）。</li>
+</ul>
+
+<footer class="note">
+  麦当劳 MCP Skill · 接入与使用指南 · 2026-11-01　|　代码 MIT，文档 CC BY 4.0
+</footer>
+
+</body>
+</html>
